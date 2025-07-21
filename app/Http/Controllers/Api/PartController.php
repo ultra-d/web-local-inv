@@ -3,47 +3,59 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Part;
 use Illuminate\Http\Request;
 
 class PartController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = Part::with(['model.brand', 'category']);
+
+        // Filtros básicos
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('part_number', 'like', "%{$search}%")
+                  ->orWhere('original_code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $parts = $query->available()->paginate(12);
+        return response()->json($parts);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        //
+        $part = Part::with(['model.brand', 'category'])->findOrFail($id);
+        return response()->json($part);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function search(Request $request)
     {
-        //
-    }
+        $query = $request->get('q');
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $parts = Part::with(['model.brand', 'category'])
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('part_number', 'like', "%{$query}%")
+                  ->orWhere('original_code', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->available()
+            ->limit(20)
+            ->get();
+
+        return response()->json($parts);
     }
 }

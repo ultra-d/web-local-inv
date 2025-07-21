@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Services\DashboardService;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -14,6 +16,6 @@ class DashboardController extends Controller
     public function index()
     {
         $data = $this->dashboardService->getDashboardData();
-        return response()->json($data);
+        return Inertia::render('Dashboard', $data);
     }
 }

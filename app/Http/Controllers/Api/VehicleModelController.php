@@ -3,47 +3,39 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\VehicleModel;
 use Illuminate\Http\Request;
 
 class VehicleModelController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $models = VehicleModel::with('brand')
+            ->active()
+            ->withCount(['parts' => function ($query) {
+                $query->available();
+            }])
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($models);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        //
+        $model = VehicleModel::with(['brand', 'parts.category'])
+            ->findOrFail($id);
+
+        return response()->json($model);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function parts($modelId, Request $request)
     {
-        //
-    }
+        $model = VehicleModel::findOrFail($modelId);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $query = $model->parts()->with(['category'])->available();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $parts = $query->paginate($request->get('per_page', 12));
+        return response()->json($parts);
     }
 }

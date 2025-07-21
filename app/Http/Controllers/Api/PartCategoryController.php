@@ -3,47 +3,38 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\PartCategory;
 use Illuminate\Http\Request;
 
 class PartCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $categories = PartCategory::active()
+            ->with('children')
+            ->whereNull('parent_id')
+            ->withCount('parts')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($categories);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        //
+        $category = PartCategory::with(['children', 'parts.model.brand'])
+            ->findOrFail($id);
+
+        return response()->json($category);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function parts($categoryId, Request $request)
     {
-        //
-    }
+        $category = PartCategory::findOrFail($categoryId);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $query = $category->parts()->with(['model.brand'])->available();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $parts = $query->paginate($request->get('per_page', 12));
+        return response()->json($parts);
     }
 }
