@@ -124,7 +124,7 @@ onUnmounted(() => {
                             <div class="relative" ref="createDropdown">
                                 <button
                                     @click="toggleCreateDropdown"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 shadow-sm transition-colors"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 shadow-sm smooth-button"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -142,77 +142,84 @@ onUnmounted(() => {
                                 </button>
 
                                 <!-- Dropdown menu -->
-                                <div
-                                    v-if="showCreateDropdown"
-                                    class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                                 <transition
+                                    enter-active-class="dropdown-enter-active"
+                                    enter-from-class="dropdown-enter-from"
+                                    leave-active-class="dropdown-leave-active"
+                                    leave-to-class="dropdown-leave-to"
                                 >
-                                    <button
-                                        @click="navigateToCreate('/parts/create')"
-                                        class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    <div
+                                        v-if="showCreateDropdown"
+                                        class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
                                     >
-                                        <span class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                            <span class="text-lg">🔧</span>
-                                        </span>
-                                        <div class="text-left">
-                                            <div class="font-medium">Nuevo Repuesto</div>
-                                            <div class="text-xs text-gray-500">Agregar autopartes al inventario</div>
-                                        </div>
-                                    </button>
+                                        <button
+                                            @click="navigateToCreate('/parts/create')"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <span class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                                <span class="text-lg">🔧</span>
+                                            </span>
+                                            <div class="text-left">
+                                                <div class="font-medium">Nuevo Repuesto</div>
+                                                <div class="text-xs text-gray-500">Agregar autopartes al inventario</div>
+                                            </div>
+                                        </button>
 
-                                    <button
-                                        @click="navigateToCreate('/categories/create')"
-                                        class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                        <span class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                            <span class="text-lg">📁</span>
-                                        </span>
-                                        <div class="text-left">
-                                            <div class="font-medium">Nueva Categoría</div>
-                                            <div class="text-xs text-gray-500">Organizar repuestos por tipo</div>
-                                        </div>
-                                    </button>
+                                        <button
+                                            @click="navigateToCreate('/categories/create')"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <span class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                                <span class="text-lg">📁</span>
+                                            </span>
+                                            <div class="text-left">
+                                                <div class="font-medium">Nueva Categoría</div>
+                                                <div class="text-xs text-gray-500">Organizar repuestos por tipo</div>
+                                            </div>
+                                        </button>
 
-                                    <button
-                                        @click="navigateToCreate('/models/create')"
-                                        class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                        <span class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                            <span class="text-lg">🚗</span>
-                                        </span>
-                                        <div class="text-left">
-                                            <div class="font-medium">Nuevo Modelo</div>
-                                            <div class="text-xs text-gray-500">Agregar modelo de vehículo</div>
-                                        </div>
-                                    </button>
+                                        <button
+                                            @click="navigateToCreate('/models/create')"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <span class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                <span class="text-lg">🚗</span>
+                                            </span>
+                                            <div class="text-left">
+                                                <div class="font-medium">Nuevo Modelo</div>
+                                                <div class="text-xs text-gray-500">Agregar modelo de vehículo</div>
+                                            </div>
+                                        </button>
 
-                                    <button
-                                        @click="navigateToCreate('/brands/create')"
-                                        class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                        <span class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                                            <span class="text-lg">🏷️</span>
-                                        </span>
-                                        <div class="text-left">
-                                            <div class="font-medium">Nueva Marca</div>
-                                            <div class="text-xs text-gray-500">Registrar marca de vehículo</div>
-                                        </div>
-                                    </button>
+                                        <button
+                                            @click="navigateToCreate('/brands/create')"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <span class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                                <span class="text-lg">🏷️</span>
+                                            </span>
+                                            <div class="text-left">
+                                                <div class="font-medium">Nueva Marca</div>
+                                                <div class="text-xs text-gray-500">Registrar marca de vehículo</div>
+                                            </div>
+                                        </button>
 
-                                    <hr class="my-2 border-gray-200">
+                                        <hr class="my-2 border-gray-200">
 
-                                    <button
-                                        @click="openImportModal"
-                                        class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                    >
-                                        <span class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                                            <span class="text-lg">📥</span>
-                                        </span>
-                                        <div class="text-left">
-                                            <div class="font-medium">Importar Datos</div>
-                                            <div class="text-xs text-gray-500">Subir archivo Excel/CSV</div>
-                                        </div>
-                                    </button>
-                                </div>
+                                        <button
+                                            @click="openImportModal"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <span class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                                                <span class="text-lg">📥</span>
+                                            </span>
+                                            <div class="text-left">
+                                                <div class="font-medium">Importar Datos</div>
+                                                <div class="text-xs text-gray-500">Subir archivo Excel/CSV</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </transition>
                             </div>
                         </div>
                     </div>
@@ -223,30 +230,38 @@ onUnmounted(() => {
             <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <StatsCard
-                        title="Total Repuestos"
-                        :value="stats.totalParts"
-                        icon="🔧"
-                        color="blue"
-                    />
-                    <StatsCard
-                        title="Stock Bajo"
-                        :value="stats.lowStock"
-                        icon="⚠️"
-                        color="yellow"
-                    />
-                    <StatsCard
-                        title="Más Vendidos"
-                        :value="stats.bestsellers"
-                        icon="⭐"
-                        color="green"
-                    />
-                    <StatsCard
-                        title="Categorías"
-                        :value="stats.categories"
-                        icon="📁"
-                        color="purple"
-                    />
+                    <div class="stats-card">
+                        <StatsCard
+                            title="Total Repuestos"
+                            :value="stats.totalParts"
+                            icon="🔧"
+                            color="blue"
+                        />
+                    </div>
+                    <div class="stats-card">
+                        <StatsCard
+                            title="Stock Bajo"
+                            :value="stats.lowStock"
+                            icon="⚠️"
+                            color="yellow"
+                        />
+                    </div>
+                    <div class="stats-card">
+                        <StatsCard
+                            title="Más Vendidos"
+                            :value="stats.bestsellers"
+                            icon="⭐"
+                            color="green"
+                        />
+                    </div>
+                    <div class="stats-card">
+                        <StatsCard
+                            title="Categorías"
+                            :value="stats.categories"
+                            icon="📁"
+                            color="purple"
+                        />
+                    </div>
                 </div>
 
                 <!-- Quick Access Categories -->

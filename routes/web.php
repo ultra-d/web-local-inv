@@ -49,3 +49,8 @@ Route::get('/parts/{part}', [PartController::class, 'show'])->name('parts.show')
 Route::get('/parts/{part}/edit', [PartController::class, 'edit'])->name('parts.edit');
 Route::put('/parts/{part}', [PartController::class, 'update'])->name('parts.update');
 Route::delete('/parts/{part}', [PartController::class, 'destroy'])->name('parts.destroy');
+
+// Rutas AJAX para crear opciones dinámicamente
+Route::post('/parts/create-category', [PartController::class, 'createCategory'])->name('parts.create-category');
+Route::post('/parts/create-brand', [PartController::class, 'createBrand'])->name('parts.create-brand');
+Route::post('/parts/create-model', [PartController::class, 'createModel'])->name('parts.create-model');
