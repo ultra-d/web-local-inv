@@ -48,7 +48,7 @@
             <p class="text-sm font-medium text-gray-900">{{ result.name }}</p>
             <p class="text-xs text-gray-500">{{ result.part_number }}</p>
           </div>
-          <span class="text-xs text-gray-400">{{ result.category.name }}</span>
+          <span v-if="result.category" class="text-xs text-gray-400">{{ result.category.name }}</span>
         </li>
       </ul>
     </div>
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 
 const emit = defineEmits(['search', 'select'])
 
@@ -64,6 +64,7 @@ const searchQuery = ref('')
 const searchResults = ref([])
 const showResults = ref(false)
 const searchTimeout = ref(null)
+const isSearching = ref(false)
 
 const handleInput = () => {
   clearTimeout(searchTimeout.value)
@@ -79,14 +80,27 @@ const handleInput = () => {
 }
 
 const performSearch = async () => {
+  if (isSearching.value) return // Prevenir múltiples búsquedas simultáneas
+
   try {
+    isSearching.value = true
     const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery.value)}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
     const data = await response.json()
 
-    searchResults.value = data.results
+    // CORRECCIÓN: data ya es un array, no tiene propiedad .results
+    searchResults.value = Array.isArray(data) ? data : []
     showResults.value = true
   } catch (error) {
     console.error('Search error:', error)
+    searchResults.value = []
+    showResults.value = false
+  } finally {
+    isSearching.value = false
   }
 }
 
@@ -101,18 +115,28 @@ const selectResult = (result) => {
   showResults.value = false
 }
 
-// Cerrar resultados al hacer clic fuera
+const closeResults = (event) => {
+  // Mejorada la detección del click fuera
+  const searchContainer = event.target.closest('.relative.max-w-lg')
+  if (!searchContainer) {
+    showResults.value = false
+  }
+}
+
+// Cerrar resultados al hacer clic fuera - CORREGIDO
 watch(showResults, (value) => {
   if (value) {
-    document.addEventListener('click', closeResults)
+    setTimeout(() => {
+      document.addEventListener('click', closeResults)
+    }, 100) // Pequeño delay para evitar que se cierre inmediatamente
   } else {
     document.removeEventListener('click', closeResults)
   }
 })
 
-const closeResults = (event) => {
-  if (!event.target.closest('.relative')) {
-    showResults.value = false
-  }
-}
+// Cleanup al desmontar el componente
+onUnmounted(() => {
+  document.removeEventListener('click', closeResults)
+  clearTimeout(searchTimeout.value)
+})
 </script>

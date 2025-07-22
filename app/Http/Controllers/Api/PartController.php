@@ -39,23 +39,31 @@ class PartController extends Controller
 
     public function search(Request $request)
     {
+        // Validación mejorada
+        $request->validate([
+            'q' => 'required|string|min:2|max:255'
+        ]);
+
         $query = $request->get('q');
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
+        try {
+            $parts = Part::with(['model.brand', 'category'])
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('part_number', 'like', "%{$query}%")
+                      ->orWhere('original_code', 'like', "%{$query}%")
+                      ->orWhere('description', 'like', "%{$query}%");
+                })
+                ->available()
+                ->limit(20)
+                ->get();
+
+            // CORRECCIÓN: Devolver array directo, no objeto con results
+            return response()->json($parts);
+
+        } catch (\Exception $e) {
+            \Log::error('Search error: ' . $e->getMessage());
+            return response()->json([], 500);
         }
-
-        $parts = Part::with(['model.brand', 'category'])
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('part_number', 'like', "%{$query}%")
-                  ->orWhere('original_code', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
-            })
-            ->available()
-            ->limit(20)
-            ->get();
-
-        return response()->json($parts);
     }
 }
