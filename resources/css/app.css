@@ -513,3 +513,88 @@ body.inertia-loading::after {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Fix específico solo para el problema de texto blanco */
+input[type="text"]:not([class*="bg-"]),
+input[type="email"]:not([class*="bg-"]),
+input[type="password"]:not([class*="bg-"]),
+input[type="number"]:not([class*="bg-"]),
+input[type="tel"]:not([class*="bg-"]),
+input[type="url"]:not([class*="bg-"]),
+select:not([class*="bg-"]),
+textarea:not([class*="bg-"]) {
+  color: #111827 !important; /* Texto negro */
+  background-color: #ffffff !important; /* Fondo blanco */
+}
+
+/* Placeholders visibles */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important; /* Gris para placeholders */
+  opacity: 1;
+}
+
+/* Mantener el texto negro al hacer focus */
+input:focus,
+select:focus,
+textarea:focus {
+  color: #111827 !important;
+}
+
+/* ========================================
+   📸 ESTILOS PARA SUBIDA DE IMÁGENES
+   ======================================== */
+
+/* Área de drag & drop mejorada */
+.image-upload-area {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-upload-area:hover {
+  border-color: #3B82F6;
+  background-color: #EFF6FF;
+}
+
+.image-upload-area.dragover {
+  border-color: #1D4ED8;
+  background-color: #DBEAFE;
+  transform: scale(1.02);
+}
+
+/* Preview de imagen con overlay suave */
+.image-preview {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.image-preview:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+}
+
+/* Animación del botón de eliminar */
+.delete-image-btn {
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.delete-image-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}

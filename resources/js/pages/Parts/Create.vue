@@ -49,46 +49,35 @@
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Código del Repuesto *
-                  </label>
-                  <input
-                    v-model="form.part_number"
-                    type="text"
-                    required
-                    placeholder="Ej: FO-001"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    :class="{ 'border-red-500': errors.part_number }"
-                  />
-                  <p v-if="errors.part_number" class="mt-1 text-sm text-red-600">{{ errors.part_number }}</p>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Código Original
-                  </label>
-                  <input
-                    v-model="form.original_code"
-                    type="text"
-                    placeholder="Ej: TOY-FO-001"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
                     Marca *
                   </label>
                   <input
                     v-model="form.brand"
                     type="text"
                     required
-                    placeholder="Ej: Toyota, Honda, etc."
+                    placeholder="Ej: Bosch, Denso, NGK, Gates"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     :class="{ 'border-red-500': errors.brand }"
                   />
                   <p v-if="errors.brand" class="mt-1 text-sm text-red-600">{{ errors.brand }}</p>
                 </div>
               </div>
+            </section>
+
+            <!-- Códigos del Repuesto -->
+            <section>
+              <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  🏷️
+                </span>
+                Códigos del Repuesto
+              </h3>
+
+              <PartCodesInput
+                ref="partCodesRef"
+                v-model="form.codes"
+                :errors="errors"
+              />
             </section>
 
             <!-- Clasificación -->
@@ -275,6 +264,77 @@
               </div>
             </section>
 
+            <!-- Imagen del Repuesto -->
+            <section>
+              <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                <span class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center mr-3">
+                  📸
+                </span>
+                Imagen del Repuesto
+              </h3>
+
+              <div class="space-y-4">
+                <!-- Área de subida de imagen -->
+                <div class="flex items-center justify-center w-full">
+                  <label
+                    v-if="!imagePreview"
+                    for="image-upload"
+                    class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg class="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p class="mb-2 text-sm text-gray-500">
+                        <span class="font-semibold">Clic para subir imagen</span> o arrastra y suelta
+                      </p>
+                      <p class="text-xs text-gray-500">PNG, JPG, JPEG hasta 5MB</p>
+                    </div>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      class="hidden"
+                      accept="image/*"
+                      @change="handleImageUpload"
+                    />
+                  </label>
+
+                  <!-- Preview de la imagen -->
+                  <div v-else class="relative w-full">
+                    <img
+                      :src="imagePreview"
+                      alt="Preview del repuesto"
+                      class="w-full h-64 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      @click="removeImage"
+                      class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                      title="Eliminar imagen"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Error de imagen -->
+                <p v-if="errors.image" class="mt-1 text-sm text-red-600">{{ errors.image }}</p>
+
+                <!-- Información adicional -->
+                <div class="text-sm text-gray-500 bg-blue-50 p-3 rounded-md">
+                  <p class="font-medium mb-1">💡 Tips para la imagen:</p>
+                  <ul class="text-xs space-y-1">
+                    <li>• Usa imágenes claras y bien iluminadas</li>
+                    <li>• Preferiblemente con fondo blanco o neutro</li>
+                    <li>• Tamaño recomendado: 800x600 píxeles o superior</li>
+                    <li>• Máximo 5MB por imagen</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             <!-- Opciones -->
             <section>
               <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
@@ -324,7 +384,7 @@
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <span v-if="submitting">Creando...</span>
-                <span v-else>Crear Repuesto</span>
+                <span v-else">Crear Repuesto</span>
               </button>
             </div>
           </form>
@@ -351,9 +411,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
+import PartCodesInput from '@/components/PartCodesInput.vue'
 import CreateCategoryModal from '@/components/CreateCategoryModal.vue'
 import CreateModelModal from '@/components/CreateModelModal.vue'
 
@@ -365,10 +426,24 @@ const props = defineProps({
   formData: Object
 })
 
-// Form reactivo
-const form = useForm(props.formData)
+// Form reactivo con códigos e imagen
+const form = useForm({
+  ...props.formData,
+  codes: [
+    {
+      code: '',
+      type: 'internal',
+      is_primary: true,
+      is_active: true
+    }
+  ],
+  image: null // Campo para la imagen
+})
+
 const errors = ref({})
 const submitting = ref(false)
+const imagePreview = ref(null)
+const partCodesRef = ref(null)
 
 // Estados de modales
 const showCreateCategory = ref(false)
@@ -398,6 +473,30 @@ const submitForm = async () => {
     submitting.value = true
     errors.value = {}
 
+    // Validar códigos antes de enviar
+    if (!form.codes.length || !form.codes.some(code => code.code.trim())) {
+      errors.value.codes = 'Debe agregar al menos un código'
+      submitting.value = false
+      return
+    }
+
+    // Validar códigos en tiempo real
+    if (partCodesRef.value) {
+      const codesValid = await partCodesRef.value.validateAllCodes()
+      if (!codesValid) {
+        errors.value.codes = 'Por favor corrige los errores en los códigos antes de continuar'
+        submitting.value = false
+        return
+      }
+    }
+
+    // Limpiar códigos vacíos y asegurar que haya un primary
+    const validCodes = form.codes.filter(code => code.code.trim())
+    if (!validCodes.some(code => code.is_primary)) {
+      validCodes[0].is_primary = true
+    }
+    form.codes = validCodes
+
     form.post('/parts', {
       onSuccess: () => {
         // Redirigir se maneja en el controlador
@@ -425,5 +524,46 @@ const handleModelCreated = (newModel) => {
   props.models.push(newModel)
   form.model_id = newModel.id
   showCreateModel.value = false
+}
+
+// Métodos para manejo de imágenes
+const handleImageUpload = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validar tipo de archivo
+  if (!file.type.startsWith('image/')) {
+    errors.value.image = 'Por favor selecciona un archivo de imagen válido'
+    return
+  }
+
+  // Validar tamaño (5MB máximo)
+  if (file.size > 5 * 1024 * 1024) {
+    errors.value.image = 'La imagen no puede ser mayor a 5MB'
+    return
+  }
+
+  // Limpiar errores previos
+  delete errors.value.image
+
+  // Crear preview
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target.result
+  }
+  reader.readAsDataURL(file)
+
+  // Guardar archivo en el form
+  form.image = file
+}
+
+const removeImage = () => {
+  imagePreview.value = null
+  form.image = null
+  delete errors.value.image
+
+  // Limpiar el input file
+  const input = document.getElementById('image-upload')
+  if (input) input.value = ''
 }
 </script>

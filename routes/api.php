@@ -49,4 +49,5 @@ Route::middleware('api')->group(function () {
         Route::get('/{part}', [PartController::class, 'show']);
     });
 
+    Route::post('/validate-part-code', [PartController::class, 'validatePartCode']);
 });

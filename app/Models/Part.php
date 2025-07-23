@@ -53,6 +53,22 @@ class Part extends Model
         return $this->belongsToMany(PartTag::class, 'part_tag', 'part_id', 'tag_id');
     }
 
+    // Relación con códigos
+    public function codes()
+    {
+        return $this->hasMany(PartCode::class)->orderBy('sort_order')->orderBy('is_primary', 'desc');
+    }
+
+    public function primaryCode()
+    {
+        return $this->hasOne(PartCode::class)->where('is_primary', true);
+    }
+
+    public function activeCodes()
+    {
+        return $this->hasMany(PartCode::class)->where('is_active', true)->orderBy('sort_order');
+    }
+
     // Scopes
     public function scopeAvailable($query)
     {
@@ -84,13 +100,18 @@ class Part extends Model
         return $query->where('model_id', $modelId);
     }
 
+    //Scope para buscar en códigos también
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('part_number', 'like', "%{$search}%")
               ->orWhere('original_code', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%");
+              ->orWhere('description', 'like', "%{$search}%")
+              ->orWhereHas('codes', function ($codeQuery) use ($search) {
+                  $codeQuery->where('code', 'like', "%{$search}%")
+                           ->where('is_active', true);
+              });
         });
     }
 
@@ -125,9 +146,75 @@ class Part extends Model
         return $this->price ? '$' . number_format($this->price, 2) : 'N/A';
     }
 
-    // Métodos
+    // Accessors para códigos
+    public function getPrimaryCodeValueAttribute()
+    {
+        return $this->primaryCode?->code ?? $this->part_number ?? 'Sin código';
+    }
+
+    public function getAllCodesAttribute()
+    {
+        return $this->activeCodes->pluck('code')->toArray();
+    }
+
+    public function getFormattedCodesAttribute()
+    {
+        $codes = $this->activeCodes;
+        if ($codes->isEmpty()) {
+            return $this->part_number ?? 'Sin códigos';
+        }
+
+        return $codes->map(function ($code) {
+            return $code->type === 'internal'
+                ? $code->code
+                : $code->code . ' (' . $code->formatted_type . ')';
+        })->join(', ');
+    }
+
     public function incrementViews()
     {
         $this->increment('view_count');
+    }
+
+    //métodos para manejar códigos
+    public function addCode(string $code, string $type = 'internal', bool $isPrimary = false)
+    {
+        // Si es primary, quitar primary de otros códigos
+        if ($isPrimary) {
+            $this->codes()->update(['is_primary' => false]);
+        }
+
+        return $this->codes()->create([
+            'code' => $code,
+            'type' => $type,
+            'is_primary' => $isPrimary,
+            'is_active' => true,
+            'sort_order' => $this->codes()->max('sort_order') + 1,
+        ]);
+    }
+
+    public function updateCodes(array $codes)
+    {
+        // Eliminar códigos existentes que no estén en el array
+        $newCodes = collect($codes)->pluck('code')->toArray();
+        $this->codes()->whereNotIn('code', $newCodes)->delete();
+
+        // Agregar/actualizar códigos
+        foreach ($codes as $index => $codeData) {
+            $this->codes()->updateOrCreate(
+                ['code' => $codeData['code']],
+                [
+                    'type' => $codeData['type'] ?? 'internal',
+                    'is_primary' => $codeData['is_primary'] ?? false,
+                    'is_active' => $codeData['is_active'] ?? true,
+                    'sort_order' => $index,
+                ]
+            );
+        }
+
+        // Asegurar que haya al menos un código primary
+        if (!$this->codes()->where('is_primary', true)->exists()) {
+            $this->codes()->first()?->update(['is_primary' => true]);
+        }
     }
 }
