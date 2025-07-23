@@ -120,41 +120,39 @@ onUnmounted(() => {
                                 @select="handleSelectPart"
                             />
 
-                            <!-- Botón Crear Nuevo con dropdown -->
+                            <!-- Botón Crear Nuevo circular con dropdown -->
                             <div class="relative" ref="createDropdown">
                                 <button
                                     @click="toggleCreateDropdown"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 shadow-sm smooth-button"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center group transition-all duration-200 hover:scale-105"
                                 >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    <span>Crear Nuevo</span>
                                     <svg
-                                        class="w-4 h-4 transition-transform"
-                                        :class="{ 'rotate-180': showCreateDropdown }"
+                                        class="w-6 h-6 transition-transform duration-200"
+                                        :class="{ 'rotate-45': showCreateDropdown }"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
                                     >
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                     </svg>
                                 </button>
 
                                 <!-- Dropdown menu -->
-                                 <transition
-                                    enter-active-class="dropdown-enter-active"
-                                    enter-from-class="dropdown-enter-from"
-                                    leave-active-class="dropdown-leave-active"
-                                    leave-to-class="dropdown-leave-to"
+                                <transition
+                                    enter-active-class="transition ease-out duration-200"
+                                    enter-from-class="opacity-0 transform scale-95"
+                                    enter-to-class="opacity-1 transform scale-100"
+                                    leave-active-class="transition ease-in duration-150"
+                                    leave-from-class="opacity-1 transform scale-100"
+                                    leave-to-class="opacity-0 transform scale-95"
                                 >
                                     <div
                                         v-if="showCreateDropdown"
-                                        class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                                        class="absolute right-0 mt-3 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50"
                                     >
                                         <button
                                             @click="navigateToCreate('/parts/create')"
-                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                             <span class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
                                                 <span class="text-lg">🔧</span>
@@ -167,7 +165,7 @@ onUnmounted(() => {
 
                                         <button
                                             @click="navigateToCreate('/categories/create')"
-                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                             <span class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
                                                 <span class="text-lg">📁</span>
@@ -180,7 +178,7 @@ onUnmounted(() => {
 
                                         <button
                                             @click="navigateToCreate('/models/create')"
-                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                             <span class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
                                                 <span class="text-lg">🚗</span>
@@ -193,7 +191,7 @@ onUnmounted(() => {
 
                                         <button
                                             @click="navigateToCreate('/brands/create')"
-                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                             <span class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
                                                 <span class="text-lg">🏷️</span>
@@ -208,7 +206,7 @@ onUnmounted(() => {
 
                                         <button
                                             @click="openImportModal"
-                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            class="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                             <span class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                                                 <span class="text-lg">📥</span>
@@ -311,7 +309,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.rotate-180 {
-  transform: rotate(180deg);
+.rotate-45 {
+  transform: rotate(45deg);
 }
 </style>
