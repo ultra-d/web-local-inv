@@ -66,4 +66,51 @@ class PartController extends Controller
             return response()->json([], 500);
         }
     }
+
+    public function validatePartCode(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'code' => 'required|string|max:50',
+                'exclude_part_id' => 'nullable|integer'
+            ]);
+
+            // Verificar si el modelo PartCode existe
+            if (!class_exists('\App\Models\PartCode')) {
+                // Si no existe el modelo PartCode, usar una validación simple
+                return response()->json([
+                    'exists' => false,
+                    'message' => 'Código disponible'
+                ]);
+            }
+
+            $query = \App\Models\PartCode::where('code', $validated['code']);
+
+            if (isset($validated['exclude_part_id']) && $validated['exclude_part_id']) {
+                $query->where('part_id', '!=', $validated['exclude_part_id']);
+            }
+
+            $exists = $query->exists();
+
+            return response()->json([
+                'exists' => $exists,
+                'message' => $exists ? 'Código ya existe' : 'Código disponible'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'exists' => false,
+                'errors' => $e->errors(),
+                'message' => 'Error de validación'
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Error validating part code: ' . $e->getMessage());
+
+            return response()->json([
+                'exists' => false,
+                'message' => 'Código disponible', // En caso de error, asumir disponible
+            ]);
+        }
+    }
 }

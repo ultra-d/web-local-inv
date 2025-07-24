@@ -384,7 +384,7 @@
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 <span v-if="submitting">Creando...</span>
-                <span v-else">Crear Repuesto</span>
+                <span v-else>Crear Repuesto</span>
               </button>
             </div>
           </form>

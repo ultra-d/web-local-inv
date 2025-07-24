@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('parts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('model_id')->constrained()->onDelete('cascade');
+            $table->foreignId('model_id')->constrained('models')->onDelete('cascade');
             $table->foreignId('category_id')->constrained('part_categories')->onDelete('cascade');
             $table->string('name', 200);
             $table->string('part_number', 100)->unique();

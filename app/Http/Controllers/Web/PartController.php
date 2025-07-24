@@ -127,7 +127,7 @@ class PartController extends Controller
                 'location' => 'nullable|string|max:100',
                 'description' => 'nullable|string',
                 'notes' => 'nullable|string',
-                'model_id' => 'required|exists:vehicle_models,id',
+                'model_id' => 'required|exists:models,id',
                 'category_id' => 'required|exists:part_categories,id',
                 'is_bestseller' => 'boolean',
                 'is_available' => 'boolean',

@@ -1,15 +1,15 @@
 <template>
   <!-- Overlay -->
-  <div class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="fixed inset-0 z-[99999] overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-      <!-- Background overlay -->
+      <!-- Background overlay - fondo súper sutil -->
       <div
-        class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+        class="fixed inset-0 transition-opacity bg-white bg-opacity-10"
         @click="$emit('close')"
       ></div>
 
       <!-- Modal -->
-      <div class="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+      <div class="relative inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg z-10">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-gray-900 flex items-center">
             <span class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
@@ -19,9 +19,11 @@
           </h3>
           <button
             @click="$emit('close')"
-            class="text-gray-400 hover:text-gray-600"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            ✕
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
           </button>
         </div>
 
@@ -36,7 +38,7 @@
                 type="text"
                 required
                 placeholder="Ej: Corolla, Civic, Sentra..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 :class="{ 'border-red-500': errors.name }"
               />
               <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
@@ -51,7 +53,7 @@
                 type="text"
                 required
                 placeholder="Ej: COR-2020, CIV-2019..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 :class="{ 'border-red-500': errors.code }"
               />
               <p v-if="errors.code" class="mt-1 text-sm text-red-600">{{ errors.code }}</p>
@@ -66,7 +68,7 @@
               <select
                 v-model="form.brand_id"
                 required
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 :class="{ 'border-red-500': errors.brand_id }"
               >
                 <option value="">Seleccionar marca...</option>
@@ -97,7 +99,7 @@
                 :min="1900"
                 :max="currentYear + 5"
                 placeholder="2020"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 :class="{ 'border-red-500': errors.year_from }"
               />
               <p v-if="errors.year_from" class="mt-1 text-sm text-red-600">{{ errors.year_from }}</p>
@@ -113,7 +115,7 @@
                 :min="1900"
                 :max="currentYear + 5"
                 placeholder="2024"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 :class="{ 'border-red-500': errors.year_to }"
               />
               <p v-if="errors.year_to" class="mt-1 text-sm text-red-600">{{ errors.year_to }}</p>
@@ -128,8 +130,12 @@
               v-model="form.description"
               rows="3"
               placeholder="Descripción opcional del modelo..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             ></textarea>
+          </div>
+
+          <div v-if="errors.general" class="p-3 bg-red-50 border border-red-200 rounded-md">
+            <p class="text-sm text-red-600">{{ errors.general }}</p>
           </div>
 
           <div class="flex justify-end space-x-3 pt-4">
@@ -192,28 +198,34 @@ const createModel = async () => {
     creating.value = true
     errors.value = {}
 
-    const response = await fetch('/parts/create-model', {
+    const response = await fetch('/models/store-ajax', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        'Accept': 'application/json'
       },
       body: JSON.stringify(form)
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      const errorData = await response.json()
-      errors.value = errorData.errors || {}
+      if (data.errors) {
+        errors.value = data.errors
+      } else {
+        errors.value = { general: data.message || 'Error al crear el modelo' }
+      }
+      creating.value = false
       return
     }
 
-    const newModel = await response.json()
-    emit('created', newModel)
+    // ✅ Solo cerrar si todo salió bien
+    emit('created', data.model || data)
 
   } catch (error) {
     console.error('Error creating model:', error)
-    errors.value = { general: 'Error al crear el modelo' }
-  } finally {
+    errors.value = { general: 'Error de conexión: ' + error.message }
     creating.value = false
   }
 }

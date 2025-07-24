@@ -13,12 +13,12 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // Marcas
 Route::get('/brands', [BrandController::class, 'index'])->name('brands.index');
-Route::get('/brands/create', [BrandController::class, 'create'])->name('brands.create');  // NUEVA
-Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');         // NUEVA
+Route::get('/brands/create', [BrandController::class, 'create'])->name('brands.create');
+Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
 Route::get('/brands/{brand}', [BrandController::class, 'show'])->name('brands.show');
-Route::get('/brands/{brand}/edit', [BrandController::class, 'edit'])->name('brands.edit'); // NUEVA
-Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update'); // NUEVA
-Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy'); // NUEVA
+Route::get('/brands/{brand}/edit', [BrandController::class, 'edit'])->name('brands.edit');
+Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
+Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
 
 // Búsqueda
 Route::get('/search', [SearchController::class, 'index'])->name('search');
@@ -50,7 +50,16 @@ Route::get('/parts/{part}/edit', [PartController::class, 'edit'])->name('parts.e
 Route::put('/parts/{part}', [PartController::class, 'update'])->name('parts.update');
 Route::delete('/parts/{part}', [PartController::class, 'destroy'])->name('parts.destroy');
 
-// Rutas AJAX para crear opciones dinámicamente
-Route::post('/parts/create-category', [PartController::class, 'createCategory'])->name('parts.create-category');
-Route::post('/parts/create-brand', [PartController::class, 'createBrand'])->name('parts.create-brand');
-Route::post('/parts/create-model', [PartController::class, 'createModel'])->name('parts.create-model');
+// ============================
+// RUTAS AJAX para los modales
+// ============================
+Route::post('/categories/store-ajax', [PartCategoryController::class, 'storeAjax'])->name('categories.store-ajax');
+Route::post('/models/store-ajax', [VehicleModelController::class, 'storeAjax'])->name('models.store-ajax');
+Route::post('/brands/store-ajax', [BrandController::class, 'storeAjax'])->name('brands.store-ajax');
+
+// ====================================================
+// MANTENER las rutas existentes para compatibilidad
+// ====================================================
+//Route::post('/parts/create-category', [PartController::class, 'createCategory'])->name('parts.create-category');
+//Route::post('/parts/create-brand', [PartController::class, 'createBrand'])->name('parts.create-brand');
+//Route::post('/parts/create-model', [PartController::class, 'createModel'])->name('parts.create-model');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 use App\Models\PartCategory;
 use Illuminate\Http\Request;
@@ -57,6 +58,47 @@ class PartCategoryController extends Controller
             \Log::error('Category show error: ' . $e->getMessage());
             return redirect()->route('categories.index')
                 ->with('error', 'Categoría no encontrada');
+        }
+    }
+
+    public function storeAjax(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:part_categories,name',
+                'parent_id' => 'nullable|exists:part_categories,id',
+                'color' => 'nullable|string|max:7',
+                'icon' => 'nullable|string|max:10',
+            ]);
+
+            $category = PartCategory::create([
+                'name' => $validated['name'],
+                'parent_id' => $validated['parent_id'] ?: null,
+                'color' => $validated['color'] ?? '#3B82F6',
+                'icon' => $validated['icon'] ?? '📦',
+                'is_active' => true,
+                'sort_order' => PartCategory::max('sort_order') + 1,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'category' => $category->load('parent'),
+                'message' => 'Categoría creada exitosamente'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+                'message' => 'Error de validación'
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating category via AJAX: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ], 500);
         }
     }
 }
