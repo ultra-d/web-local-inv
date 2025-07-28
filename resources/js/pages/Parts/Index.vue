@@ -13,7 +13,10 @@
               <button class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium border border-gray-300">
                 📥 Importar
               </button>
-              <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+              <button
+                @click="router.get('/parts/create')"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              >
                 + Nuevo Repuesto
               </button>
             </div>
@@ -29,7 +32,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Total</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.total_parts || 0 }}</p>
               </div>
             </div>
           </div>
@@ -41,7 +44,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Disponibles</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.available }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.available_parts || 0 }}</p>
               </div>
             </div>
           </div>
@@ -53,7 +56,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Stock Bajo</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.lowStock }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.low_stock || 0 }}</p>
               </div>
             </div>
           </div>
@@ -65,7 +68,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Sin Stock</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.outOfStock }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.out_of_stock || 0 }}</p>
               </div>
             </div>
           </div>
@@ -77,7 +80,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Bestsellers</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.bestsellers }}</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.bestsellers || 0 }}</p>
               </div>
             </div>
           </div>
@@ -93,37 +96,52 @@
                 type="text"
                 placeholder="Nombre, código, descripción..."
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                @keyup.enter="loadParts"
               >
             </div>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
               <select
                 v-model="categoryFilter"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                @change="loadParts"
               >
                 <option value="">Todas las categorías</option>
-                <option v-for="category in categories" :key="category.id" :value="category.id">
-                  {{ category.name }}
-                </option>
+
+                <!-- Mostrar todas las categorías con indentación visual -->
+                <template v-for="category in categoriesForFilter" :key="category.id">
+                  <option
+                    :value="category.id"
+                    :class="category.parent_id ? 'text-gray-600' : 'font-semibold'"
+                  >
+                    {{ category.parent_id ? '   ↳ ' : '📁 ' }}{{ category.name }}
+                    <span v-if="category.parts_count > 0" class="text-gray-400">({{ category.parts_count }})</span>
+                  </option>
+                </template>
               </select>
             </div>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
               <select
                 v-model="brandFilter"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                @change="loadParts"
               >
                 <option value="">Todas las marcas</option>
-                <option v-for="brand in brands" :key="brand.id" :value="brand.id">
-                  {{ brand.name }}
+                <option v-for="brand in uniqueBrands" :key="brand" :value="brand">
+                  {{ brand }}
                 </option>
               </select>
             </div>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Estado Stock</label>
               <select
                 v-model="stockFilter"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                @change="loadParts"
               >
                 <option value="">Todos</option>
                 <option value="in_stock">En stock</option>
@@ -131,6 +149,7 @@
                 <option value="out_of_stock">Sin stock</option>
               </select>
             </div>
+
             <div class="flex items-end">
               <button
                 @click="loadParts"
@@ -144,13 +163,13 @@
           <!-- Quick Filters -->
           <div class="flex flex-wrap gap-2">
             <button
-              @click="stockFilter = 'low_stock'"
+              @click="setStockFilter('low_stock')"
               class="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200"
             >
               Stock Bajo
             </button>
             <button
-              @click="stockFilter = 'out_of_stock'"
+              @click="setStockFilter('out_of_stock')"
               class="px-3 py-1 text-sm bg-red-100 text-red-800 rounded-full hover:bg-red-200"
             >
               Sin Stock
@@ -297,14 +316,13 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
-                      <button class="text-blue-600 hover:text-blue-900">Ver</button>
-                      <button class="text-gray-600 hover:text-gray-900">Editar</button>
                       <Link
                         :href="route('parts.show', part.id)"
                         class="text-blue-600 hover:text-blue-900"
                       >
-                        Detalles
+                        Ver
                       </Link>
+                      <button class="text-gray-600 hover:text-gray-900">Editar</button>
                     </div>
                   </td>
                 </tr>
@@ -381,9 +399,21 @@
           <div class="text-6xl mb-4">🔧</div>
           <h3 class="text-lg font-medium text-gray-900 mb-2">No hay repuestos registrados</h3>
           <p class="text-gray-500 mb-6">Comienza agregando repuestos a tu inventario</p>
-          <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
-            + Agregar Primer Repuesto
+          <button
+            @click="router.get('/parts/create')"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            + Crear Primer Repuesto
           </button>
+        </div>
+
+        <!-- Debug info (remove in production) -->
+        <div v-if="false" class="mt-4 p-4 bg-gray-100 rounded text-xs">
+          <p><strong>Debug:</strong></p>
+          <p>Categorías: {{ categories.length }}</p>
+          <p>Filtro actual: {{ categoryFilter }}</p>
+          <p>Partes: {{ parts.length }}</p>
+          <p>Filtradas: {{ filteredParts.length }}</p>
         </div>
       </div>
     </AppLayout>
@@ -391,8 +421,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 
 interface Part {
@@ -423,64 +453,85 @@ interface Part {
 interface Category {
   id: number
   name: string
-}
-
-interface Brand {
-  id: number
-  name: string
+  parent_id?: number | null
+  parts_count?: number
 }
 
 interface Stats {
-  total: number
-  available: number
-  lowStock: number
-  outOfStock: number
+  total_parts: number
+  available_parts: number
+  out_of_stock: number
+  low_stock: number
   bestsellers: number
 }
 
+// Props que vienen del controlador
+const props = defineProps<{
+  parts: {
+    data: Part[]
+    total: number
+    current_page: number
+    last_page: number
+  }
+  categories: Category[] // Todas las categorías para filtros
+  hierarchicalCategories?: Category[] // Categorías jerárquicas (opcional)
+  filters: {
+    search?: string
+    category_id?: string
+  }
+  stats: Stats
+}>()
+
 // State
-const parts = ref<Part[]>([])
-const categories = ref<Category[]>([])
-const brands = ref<Brand[]>([])
-const loading = ref(true)
+const loading = ref(false)
 const viewMode = ref<'table' | 'grid'>('table')
 
-// Filters
-const searchTerm = ref('')
-const categoryFilter = ref('')
+// Filters (usar los valores iniciales del backend)
+const searchTerm = ref(props.filters.search || '')
+const categoryFilter = ref(props.filters.category_id || '')
 const brandFilter = ref('')
 const stockFilter = ref('')
 
-const stats = ref<Stats>({
-  total: 0,
-  available: 0,
-  lowStock: 0,
-  outOfStock: 0,
-  bestsellers: 0
+// Computed
+const parts = computed(() => props.parts.data || [])
+const stats = computed(() => props.stats)
+
+// Organizar categorías para el filtro (principales primero, luego subcategorías)
+const categoriesForFilter = computed(() => {
+  const categories = props.categories || []
+
+  // Agrupar categorías principales y subcategorías
+  const principals = categories.filter(cat => !cat.parent_id).sort((a, b) => a.name.localeCompare(b.name))
+  const subcategories = categories.filter(cat => cat.parent_id).sort((a, b) => a.name.localeCompare(b.name))
+
+  // Crear una lista ordenada: principal → sus subcategorías → siguiente principal → sus subcategorías
+  const result: Category[] = []
+
+  principals.forEach(principal => {
+    result.push(principal)
+    const subs = subcategories.filter(sub => sub.parent_id === principal.id)
+    result.push(...subs)
+  })
+
+  return result
 })
 
-// Computed
+// Obtener marcas únicas de los repuestos
+const uniqueBrands = computed(() => {
+  const brands = parts.value.map(part => part.brand).filter(Boolean)
+  return [...new Set(brands)].sort()
+})
+
+// Filtrar repuestos localmente (para filtros de cliente)
 const filteredParts = computed(() => {
   let filtered = parts.value
 
-  if (searchTerm.value) {
-    const search = searchTerm.value.toLowerCase()
-    filtered = filtered.filter(part =>
-      part.name.toLowerCase().includes(search) ||
-      part.part_number.toLowerCase().includes(search) ||
-      (part.original_code && part.original_code.toLowerCase().includes(search)) ||
-      part.brand.toLowerCase().includes(search)
-    )
-  }
-
-  if (categoryFilter.value) {
-    filtered = filtered.filter(part => part.category?.id.toString() === categoryFilter.value)
-  }
-
+  // Filtro local de marca (no requiere recarga de página)
   if (brandFilter.value) {
-    filtered = filtered.filter(part => part.model?.brand?.name === brandFilter.value)
+    filtered = filtered.filter(part => part.brand === brandFilter.value)
   }
 
+  // Filtro local de stock (no requiere recarga de página)
   if (stockFilter.value) {
     filtered = filtered.filter(part => {
       const status = getStockStatus(part.stock_quantity, part.min_stock)
@@ -492,32 +543,51 @@ const filteredParts = computed(() => {
 })
 
 // Methods
-const loadParts = async () => {
-  try {
-    loading.value = true
-    const [partsResponse, categoriesResponse, brandsResponse] = await Promise.all([
-      fetch('/api/parts'),
-      fetch('/api/categories'),
-      fetch('/api/brands')
-    ])
+const loadParts = () => {
+  const params = new URLSearchParams()
 
-    parts.value = await partsResponse.json()
-    categories.value = await categoriesResponse.json()
-    brands.value = await brandsResponse.json()
+  if (searchTerm.value) params.append('search', searchTerm.value)
+  if (categoryFilter.value) params.append('category_id', categoryFilter.value)
 
-    // Calculate stats
-    stats.value = {
-      total: parts.value.length,
-      available: parts.value.filter(p => p.is_available).length,
-      lowStock: parts.value.filter(p => p.stock_quantity <= p.min_stock && p.stock_quantity > 0).length,
-      outOfStock: parts.value.filter(p => p.stock_quantity === 0).length,
-      bestsellers: parts.value.filter(p => p.is_bestseller).length
-    }
-  } catch (error) {
-    console.error('Error loading data:', error)
-  } finally {
-    loading.value = false
+  const url = '/parts' + (params.toString() ? '?' + params.toString() : '')
+
+  console.log('🔍 Filtros aplicados:', {
+    search: searchTerm.value,
+    category_id: categoryFilter.value,
+    brand: brandFilter.value,
+    stock: stockFilter.value,
+    url: url
+  })
+
+  // Solo recargar la página para búsqueda y categoría (requieren backend)
+  // Los filtros de marca y stock se aplican localmente
+  if (searchTerm.value || categoryFilter.value) {
+    router.get(url)
   }
+}
+
+const setStockFilter = (filter: string) => {
+  stockFilter.value = filter
+  brandFilter.value = '' // Limpiar otros filtros
+}
+
+const setBestsellerFilter = () => {
+  // Limpiar filtros y mostrar solo bestsellers
+  searchTerm.value = ''
+  categoryFilter.value = ''
+  brandFilter.value = ''
+  stockFilter.value = ''
+
+  // Podrías agregar un filtro específico para bestsellers aquí
+  // Por ahora solo limpiamos los filtros
+}
+
+const clearFilters = () => {
+  searchTerm.value = ''
+  categoryFilter.value = ''
+  brandFilter.value = ''
+  stockFilter.value = ''
+  router.get('/parts') // Recargar sin filtros
 }
 
 const getStockStatus = (stock: number, minStock: number): string => {
@@ -538,25 +608,4 @@ const formatPrice = (price: number): string => {
     maximumFractionDigits: 2
   }).format(price)
 }
-
-const setBestsellerFilter = () => {
-  // Filter bestsellers by setting a custom filter
-  searchTerm.value = ''
-  categoryFilter.value = ''
-  brandFilter.value = ''
-  stockFilter.value = ''
-  // This would need additional logic to filter bestsellers
-}
-
-const clearFilters = () => {
-  searchTerm.value = ''
-  categoryFilter.value = ''
-  brandFilter.value = ''
-  stockFilter.value = ''
-}
-
-// Lifecycle
-onMounted(() => {
-  loadParts()
-})
 </script>

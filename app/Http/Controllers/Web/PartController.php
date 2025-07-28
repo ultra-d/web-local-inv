@@ -15,39 +15,95 @@ class PartController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Part::with(['model.brand', 'category']);
+            $query = Part::with(['model.brand', 'category', 'codes']);
 
             // Aplicar filtros si existen
             if ($request->has('search')) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('part_number', 'like', "%{$search}%")
-                      ->orWhere('original_code', 'like', "%{$search}%");
+                    ->orWhere('part_number', 'like', "%{$search}%")
+                    ->orWhere('original_code', 'like', "%{$search}%")
+                    ->orWhereHas('codes', function ($codeQuery) use ($search) {
+                        $codeQuery->where('code', 'like', "%{$search}%")
+                                ->where('is_active', true);
+                    });
                 });
             }
 
-            if ($request->has('category_id')) {
-                $query->where('category_id', $request->category_id);
+            // 🔥 FILTRO JERÁRQUICO DE CATEGORÍAS
+            if ($request->has('category_id') && $request->category_id) {
+                $selectedCategoryId = $request->category_id;
+
+                // Verificar si la categoría seleccionada es principal (parent_id = null)
+                $selectedCategory = PartCategory::find($selectedCategoryId);
+
+                if ($selectedCategory) {
+                    if ($selectedCategory->parent_id === null) {
+                        // Es categoría principal: incluir repuestos de la categoría Y de todas sus subcategorías
+                        $subcategoryIds = PartCategory::where('parent_id', $selectedCategoryId)
+                                                    ->pluck('id')
+                                                    ->toArray();
+
+                        // Incluir la categoría principal + todas sus subcategorías
+                        $allCategoryIds = array_merge([$selectedCategoryId], $subcategoryIds);
+
+                        $query->whereIn('category_id', $allCategoryIds);
+
+                        \Log::info("Filtro jerárquico aplicado:", [
+                            'categoria_principal' => $selectedCategoryId,
+                            'subcategorias' => $subcategoryIds,
+                            'todas_las_categorias' => $allCategoryIds
+                        ]);
+                    } else {
+                        // Es subcategoría: solo mostrar repuestos de esa subcategoría específica
+                        $query->where('category_id', $selectedCategoryId);
+
+                        \Log::info("Filtro subcategoría aplicado:", [
+                            'subcategoria' => $selectedCategoryId
+                        ]);
+                    }
+                }
             }
 
             $parts = $query->available()->paginate(12);
 
-            // Obtener categorías para filtros
-            $categories = PartCategory::active()
-                ->withCount('parts')
+            // Obtener TODAS las categorías (principales y subcategorías) para filtros
+            $allCategories = PartCategory::active()
+                ->withCount(['parts' => function ($query) {
+                    $query->available(); // Solo contar repuestos disponibles
+                }])
+                ->orderBy('parent_id', 'asc') // Primero las principales, luego las subcategorías
+                ->orderBy('name')
+                ->get();
+
+            // Obtener también categorías jerárquicas para el frontend
+            $hierarchicalCategories = PartCategory::active()
+                ->with(['children' => function ($query) {
+                    $query->withCount(['parts' => function ($subQuery) {
+                        $subQuery->available();
+                    }]);
+                }])
+                ->whereNull('parent_id')
+                ->withCount(['parts' => function ($query) {
+                    $query->available();
+                }])
                 ->orderBy('name')
                 ->get();
 
             return Inertia::render('Parts/Index', [
                 'parts' => $parts,
-                'categories' => $categories,
+                'categories' => $allCategories, // Todas las categorías para el filtro
+                'hierarchicalCategories' => $hierarchicalCategories, // Para otros usos si necesitas
                 'filters' => $request->only(['search', 'category_id']),
                 'stats' => [
                     'total_parts' => Part::count(),
                     'available_parts' => Part::available()->count(),
                     'out_of_stock' => Part::where('stock_quantity', '<=', 0)->count(),
-                    'low_stock' => Part::whereBetween('stock_quantity', [1, 5])->count(),
+                    'low_stock' => Part::where('stock_quantity', '>', 0)
+                                    ->whereColumn('stock_quantity', '<=', 'min_stock')
+                                    ->count(),
+                    'bestsellers' => Part::where('is_bestseller', true)->count()
                 ]
             ]);
         } catch (\Exception $e) {
@@ -56,12 +112,14 @@ class PartController extends Controller
             return Inertia::render('Parts/Index', [
                 'parts' => ['data' => [], 'total' => 0],
                 'categories' => [],
+                'hierarchicalCategories' => [],
                 'filters' => [],
                 'stats' => [
                     'total_parts' => 0,
                     'available_parts' => 0,
                     'out_of_stock' => 0,
                     'low_stock' => 0,
+                    'bestsellers' => 0
                 ],
                 'error' => 'Error al cargar los repuestos'
             ]);

@@ -4,7 +4,7 @@
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
       <!-- Background overlay - fondo súper sutil -->
       <div
-        class="fixed inset-0 transition-opacity bg-white bg-opacity-40"
+        class="fixed inset-0 transition-opacity bg-white bg-opacity-10"
         @click="$emit('close')"
       ></div>
 
@@ -173,6 +173,7 @@ const createCategory = async () => {
     })
 
     const data = await response.json()
+    console.log('📦 Respuesta del servidor:', data)
 
     if (!response.ok) {
       if (data.errors) {
@@ -184,6 +185,7 @@ const createCategory = async () => {
     }
 
     // Emitir el evento con la nueva categoría
+    console.log('✅ Emitiendo categoría creada:', data.category || data)
     emit('created', data.category || data)
 
   } catch (error) {

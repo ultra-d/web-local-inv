@@ -92,31 +92,50 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Categoría con opción de crear -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
                     Categoría *
-                  </label>
-                  <div class="flex space-x-2">
+                </label>
+                <div class="flex space-x-2">
                     <select
-                      v-model="form.category_id"
-                      required
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      :class="{ 'border-red-500': errors.category_id }"
+                    v-model="form.category_id"
+                    required
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    :class="{ 'border-red-500': errors.category_id }"
                     >
-                      <option value="">Seleccionar categoría...</option>
-                      <option v-for="category in categories" :key="category.id" :value="category.id">
-                        {{ category.name }}
-                      </option>
+                    <option value="">Seleccionar categoría...</option>
+
+                    <!-- Iterar sobre categorías padre y sus hijos -->
+                    <template v-for="category in categories" :key="category.id">
+                        <!-- Categoría padre -->
+                        <option
+                        :value="category.id"
+                        class="font-semibold"
+                        >
+                        📁 {{ category.name }}
+                        </option>
+
+                        <!-- Subcategorías (children) -->
+                        <option
+                        v-for="subcategory in category.children || []"
+                        :key="subcategory.id"
+                        :value="subcategory.id"
+                        class="text-gray-600"
+                        >
+                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {{ subcategory.name }}
+                        </option>
+                    </template>
+
                     </select>
                     <button
-                      type="button"
-                      @click="showCreateCategory = true"
-                      class="px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                      title="Crear nueva categoría"
+                    type="button"
+                    @click="showCreateCategory = true"
+                    class="px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                    title="Crear nueva categoría"
                     >
-                      +
+                    +
                     </button>
-                  </div>
-                  <p v-if="errors.category_id" class="mt-1 text-sm text-red-600">{{ errors.category_id }}</p>
+                </div>
+                <p v-if="errors.category_id" class="mt-1 text-sm text-red-600">{{ errors.category_id }}</p>
                 </div>
 
                 <!-- Modelo con opción de crear -->
@@ -361,6 +380,7 @@
                     v-model="form.is_available"
                     type="checkbox"
                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked
                   />
                   <span class="ml-2 text-sm text-gray-700">
                     Disponible para venta ✅
@@ -425,6 +445,10 @@ const props = defineProps({
   models: Array,
   formData: Object
 })
+console.log('📋 Categorías que llegan al frontend:', props.categories)
+console.log('🔍 MOTOR category:', props.categories.find(c => c.name === 'MOTOR'))
+console.log('👶 Children de MOTOR:', props.categories.find(c => c.name === 'MOTOR')?.children)
+console.log('📊 Estructura completa:', JSON.stringify(props.categories, null, 2))
 
 // Form reactivo con códigos e imagen
 const form = useForm({
