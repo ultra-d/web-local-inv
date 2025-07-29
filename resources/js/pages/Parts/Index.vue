@@ -92,6 +92,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Buscar repuesto</label>
               <input
+                ref="searchInput"
+                id="search-parts-input"
                 v-model="searchTerm"
                 type="text"
                 placeholder="Nombre, código, descripción..."
@@ -116,7 +118,8 @@
                     :class="category.parent_id ? 'text-gray-600' : 'font-semibold'"
                   >
                     {{ category.parent_id ? '   ↳ ' : '📁 ' }}{{ category.name }}
-                    <span v-if="category.parts_count > 0" class="text-gray-400">({{ category.parts_count }})</span>
+                    <span v-if="category.parts_count && category.parts_count > 0" class="text-gray-400">
+                        ({{ category.parts_count }}) </span>
                   </option>
                 </template>
               </select>
@@ -421,7 +424,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick, onMounted} from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 
@@ -485,6 +488,8 @@ const props = defineProps<{
 // State
 const loading = ref(false)
 const viewMode = ref<'table' | 'grid'>('table')
+const searchTimeout = ref<number | null>(null)
+const lastCursorPosition = ref(0)
 
 // Filters (usar los valores iniciales del backend)
 const searchTerm = ref(props.filters.search || '')
@@ -495,6 +500,18 @@ const stockFilter = ref('')
 // Computed
 const parts = computed(() => props.parts.data || [])
 const stats = computed(() => props.stats)
+
+// Helper para obtener el input
+const getSearchInput = (): HTMLInputElement | null => {
+  return document.getElementById('search-parts-input') as HTMLInputElement
+}
+
+const saveCursorPosition = () => {
+  const input = getSearchInput()
+  if (input) {
+    lastCursorPosition.value = input.selectionStart || 0
+  }
+}
 
 // Organizar categorías para el filtro (principales primero, luego subcategorías)
 const categoriesForFilter = computed(() => {
@@ -542,29 +559,85 @@ const filteredParts = computed(() => {
   return filtered
 })
 
+// 🔥 BÚSQUEDA AUTOMÁTICA
+watch(searchTerm, (newValue, oldValue) => {
+  // Guardar posición actual del cursor
+  saveCursorPosition()
+
+  // Limpiar timeout anterior
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+
+  // Si el campo está vacío, buscar inmediatamente
+  if (!newValue.trim()) {
+    loadPartsWithFocus()
+    return
+  }
+
+  // Si hay texto, esperar 500ms antes de buscar
+  searchTimeout.value = setTimeout(() => {
+    loadPartsWithFocus()
+  }, 500)
+}, { immediate: false })
+
 // Methods
 const loadParts = () => {
   const params = new URLSearchParams()
 
-  if (searchTerm.value) params.append('search', searchTerm.value)
+  if (searchTerm.value.trim()) params.append('search', searchTerm.value.trim())
   if (categoryFilter.value) params.append('category_id', categoryFilter.value)
 
   const url = '/parts' + (params.toString() ? '?' + params.toString() : '')
 
-  console.log('🔍 Filtros aplicados:', {
-    search: searchTerm.value,
-    category_id: categoryFilter.value,
-    brand: brandFilter.value,
-    stock: stockFilter.value,
-    url: url
-  })
+  router.get(url)
+}
 
-  // Solo recargar la página para búsqueda y categoría (requieren backend)
-  // Los filtros de marca y stock se aplican localmente
-  if (searchTerm.value || categoryFilter.value) {
-    router.get(url)
+// Método que mantiene el foco y cursor
+const loadPartsWithFocus = () => {
+  const params = new URLSearchParams()
+
+  if (searchTerm.value.trim()) params.append('search', searchTerm.value.trim())
+  if (categoryFilter.value) params.append('category_id', categoryFilter.value)
+
+  const newUrl = '/parts' + (params.toString() ? '?' + params.toString() : '')
+  const currentUrl = window.location.pathname + window.location.search
+
+  // Solo hacer la petición si la URL cambió
+  if (newUrl !== currentUrl) {
+    router.get(newUrl, {}, {
+      preserveScroll: true,
+      preserveState: true,
+      only: ['parts', 'stats'],
+      onFinish: () => {
+        // Usar onFinish en lugar de onSuccess para mayor compatibilidad
+        restoreFocus()
+      }
+    })
   }
 }
+
+const restoreFocus = () => {
+  // Usar setTimeout para asegurar que el DOM se haya actualizado
+  setTimeout(() => {
+    const input = getSearchInput()
+    if (input) {
+      input.focus()
+      // Restaurar posición del cursor
+      const position = lastCursorPosition.value
+      input.setSelectionRange(position, position)
+    }
+  }, 100)
+}
+
+// Escuchar eventos del input para guardar cursor
+onMounted(() => {
+  const input = getSearchInput()
+  if (input) {
+    input.addEventListener('keyup', saveCursorPosition)
+    input.addEventListener('click', saveCursorPosition)
+  }
+})
 
 const setStockFilter = (filter: string) => {
   stockFilter.value = filter
