@@ -23,15 +23,15 @@
           </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <!-- Stats Cards Simplificadas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <span class="text-2xl">🔧</span>
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Total</p>
+                <p class="text-sm font-medium text-gray-600">Total Repuestos</p>
                 <p class="text-2xl font-bold text-gray-900">{{ stats.total_parts || 0 }}</p>
               </div>
             </div>
@@ -48,47 +48,11 @@
               </div>
             </div>
           </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span class="text-2xl">⚠️</span>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Stock Bajo</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.low_stock || 0 }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <span class="text-2xl">❌</span>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Sin Stock</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.out_of_stock || 0 }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span class="text-2xl">⭐</span>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Bestsellers</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats.bestsellers || 0 }}</p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <!-- Advanced Filters -->
+        <!-- Advanced Filters Simplificados -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Buscar repuesto</label>
               <input
@@ -110,8 +74,6 @@
                 @change="loadParts"
               >
                 <option value="">Todas las categorías</option>
-
-                <!-- Mostrar todas las categorías con indentación visual -->
                 <template v-for="category in categoriesForFilter" :key="category.id">
                   <option
                     :value="category.id"
@@ -139,20 +101,6 @@
               </select>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Estado Stock</label>
-              <select
-                v-model="stockFilter"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                @change="loadParts"
-              >
-                <option value="">Todos</option>
-                <option value="in_stock">En stock</option>
-                <option value="low_stock">Stock bajo</option>
-                <option value="out_of_stock">Sin stock</option>
-              </select>
-            </div>
-
             <div class="flex items-end">
               <button
                 @click="loadParts"
@@ -163,26 +111,8 @@
             </div>
           </div>
 
-          <!-- Quick Filters -->
+          <!-- Quick Filters Simplificados -->
           <div class="flex flex-wrap gap-2">
-            <button
-              @click="setStockFilter('low_stock')"
-              class="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200"
-            >
-              Stock Bajo
-            </button>
-            <button
-              @click="setStockFilter('out_of_stock')"
-              class="px-3 py-1 text-sm bg-red-100 text-red-800 rounded-full hover:bg-red-200"
-            >
-              Sin Stock
-            </button>
-            <button
-              @click="setBestsellerFilter"
-              class="px-3 py-1 text-sm bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200"
-            >
-              Bestsellers
-            </button>
             <button
               @click="clearFilters"
               class="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200"
@@ -222,7 +152,7 @@
             </div>
           </div>
 
-          <!-- Table View -->
+          <!-- Table View Simplificada -->
           <div v-if="viewMode === 'table'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -231,19 +161,13 @@
                     Repuesto
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Código
+                    Código Principal
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Categoría
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Precio
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -276,9 +200,6 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">{{ part.part_number }}</div>
-                    <div v-if="part.original_code" class="text-sm text-gray-500">
-                      Orig: {{ part.original_code }}
-                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span v-if="part.category" class="text-sm text-gray-900">
@@ -286,36 +207,9 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <span class="text-sm font-medium text-gray-900">{{ part.stock_quantity }}</span>
-                      <span
-                        :class="getStockStatusClass(part.stock_quantity, part.min_stock)"
-                        class="ml-2 px-2 py-1 text-xs font-medium rounded-full"
-                      >
-                        {{ getStockStatus(part.stock_quantity, part.min_stock) }}
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
                     <span class="text-sm font-bold text-green-600">
                       ${{ formatPrice(part.price) }}
                     </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex flex-col space-y-1">
-                      <span
-                        :class="part.is_available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                        class="px-2 py-1 text-xs font-medium rounded-full text-center"
-                      >
-                        {{ part.is_available ? 'Disponible' : 'No disponible' }}
-                      </span>
-                      <span
-                        v-if="part.is_bestseller"
-                        class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 text-center"
-                      >
-                        ⭐ Bestseller
-                      </span>
-                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
@@ -333,7 +227,7 @@
             </table>
           </div>
 
-          <!-- Grid View -->
+          <!-- Grid View Simplificada -->
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
             <div
               v-for="part in filteredParts"
@@ -353,16 +247,7 @@
               </div>
 
               <div class="p-4">
-                <div class="flex items-start justify-between mb-2">
-                  <h3 class="text-sm font-medium text-gray-900 line-clamp-2">{{ part.name }}</h3>
-                  <span
-                    v-if="part.is_bestseller"
-                    class="ml-2 text-yellow-400 text-lg"
-                  >
-                    ⭐
-                  </span>
-                </div>
-
+                <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{{ part.name }}</h3>
                 <p class="text-sm text-gray-500 mb-2">{{ part.brand }}</p>
                 <p class="text-xs text-gray-400 mb-2">{{ part.part_number }}</p>
 
@@ -370,20 +255,11 @@
                   <span class="text-lg font-bold text-green-600">
                     ${{ formatPrice(part.price) }}
                   </span>
-                  <span
-                    :class="getStockStatusClass(part.stock_quantity, part.min_stock)"
-                    class="px-2 py-1 text-xs font-medium rounded-full"
-                  >
-                    Stock: {{ part.stock_quantity }}
-                  </span>
                 </div>
 
                 <div class="flex justify-between items-center">
-                  <span
-                    :class="part.is_available ? 'text-green-600' : 'text-red-600'"
-                    class="text-xs font-medium"
-                  >
-                    {{ part.is_available ? 'Disponible' : 'No disponible' }}
+                  <span class="text-xs font-medium text-green-600">
+                    Disponible
                   </span>
                   <Link
                     :href="route('parts.show', part.id)"
@@ -409,15 +285,6 @@
             + Crear Primer Repuesto
           </button>
         </div>
-
-        <!-- Debug info (remove in production) -->
-        <div v-if="false" class="mt-4 p-4 bg-gray-100 rounded text-xs">
-          <p><strong>Debug:</strong></p>
-          <p>Categorías: {{ categories.length }}</p>
-          <p>Filtro actual: {{ categoryFilter }}</p>
-          <p>Partes: {{ parts.length }}</p>
-          <p>Filtradas: {{ filteredParts.length }}</p>
-        </div>
       </div>
     </AppLayout>
   </div>
@@ -432,13 +299,9 @@ interface Part {
   id: number
   name: string
   part_number: string
-  original_code?: string
   brand: string
   price: number
-  stock_quantity: number
-  min_stock: number
   is_available: boolean
-  is_bestseller: boolean
   image_url?: string
   category?: {
     id: number
@@ -463,9 +326,6 @@ interface Category {
 interface Stats {
   total_parts: number
   available_parts: number
-  out_of_stock: number
-  low_stock: number
-  bestsellers: number
 }
 
 // Props que vienen del controlador
@@ -476,8 +336,8 @@ const props = defineProps<{
     current_page: number
     last_page: number
   }
-  categories: Category[] // Todas las categorías para filtros
-  hierarchicalCategories?: Category[] // Categorías jerárquicas (opcional)
+  categories: Category[]
+  hierarchicalCategories?: Category[]
   filters: {
     search?: string
     category_id?: string
@@ -495,7 +355,6 @@ const lastCursorPosition = ref(0)
 const searchTerm = ref(props.filters.search || '')
 const categoryFilter = ref(props.filters.category_id || '')
 const brandFilter = ref('')
-const stockFilter = ref('')
 
 // Computed
 const parts = computed(() => props.parts.data || [])
@@ -517,11 +376,9 @@ const saveCursorPosition = () => {
 const categoriesForFilter = computed(() => {
   const categories = props.categories || []
 
-  // Agrupar categorías principales y subcategorías
   const principals = categories.filter(cat => !cat.parent_id).sort((a, b) => a.name.localeCompare(b.name))
   const subcategories = categories.filter(cat => cat.parent_id).sort((a, b) => a.name.localeCompare(b.name))
 
-  // Crear una lista ordenada: principal → sus subcategorías → siguiente principal → sus subcategorías
   const result: Category[] = []
 
   principals.forEach(principal => {
@@ -543,17 +400,8 @@ const uniqueBrands = computed(() => {
 const filteredParts = computed(() => {
   let filtered = parts.value
 
-  // Filtro local de marca (no requiere recarga de página)
   if (brandFilter.value) {
     filtered = filtered.filter(part => part.brand === brandFilter.value)
-  }
-
-  // Filtro local de stock (no requiere recarga de página)
-  if (stockFilter.value) {
-    filtered = filtered.filter(part => {
-      const status = getStockStatus(part.stock_quantity, part.min_stock)
-      return status.toLowerCase().replace(' ', '_') === stockFilter.value
-    })
   }
 
   return filtered
@@ -561,21 +409,17 @@ const filteredParts = computed(() => {
 
 // 🔥 BÚSQUEDA AUTOMÁTICA
 watch(searchTerm, (newValue, oldValue) => {
-  // Guardar posición actual del cursor
   saveCursorPosition()
 
-  // Limpiar timeout anterior
   if (searchTimeout.value) {
     clearTimeout(searchTimeout.value)
   }
 
-  // Si el campo está vacío, buscar inmediatamente
   if (!newValue.trim()) {
     loadPartsWithFocus()
     return
   }
 
-  // Si hay texto, esperar 500ms antes de buscar
   searchTimeout.value = setTimeout(() => {
     loadPartsWithFocus()
   }, 500)
@@ -593,7 +437,6 @@ const loadParts = () => {
   router.get(url)
 }
 
-// Método que mantiene el foco y cursor
 const loadPartsWithFocus = () => {
   const params = new URLSearchParams()
 
@@ -603,14 +446,12 @@ const loadPartsWithFocus = () => {
   const newUrl = '/parts' + (params.toString() ? '?' + params.toString() : '')
   const currentUrl = window.location.pathname + window.location.search
 
-  // Solo hacer la petición si la URL cambió
   if (newUrl !== currentUrl) {
     router.get(newUrl, {}, {
       preserveScroll: true,
       preserveState: true,
       only: ['parts', 'stats'],
       onFinish: () => {
-        // Usar onFinish en lugar de onSuccess para mayor compatibilidad
         restoreFocus()
       }
     })
@@ -618,19 +459,16 @@ const loadPartsWithFocus = () => {
 }
 
 const restoreFocus = () => {
-  // Usar setTimeout para asegurar que el DOM se haya actualizado
   setTimeout(() => {
     const input = getSearchInput()
     if (input) {
       input.focus()
-      // Restaurar posición del cursor
       const position = lastCursorPosition.value
       input.setSelectionRange(position, position)
     }
   }, 100)
 }
 
-// Escuchar eventos del input para guardar cursor
 onMounted(() => {
   const input = getSearchInput()
   if (input) {
@@ -639,40 +477,11 @@ onMounted(() => {
   }
 })
 
-const setStockFilter = (filter: string) => {
-  stockFilter.value = filter
-  brandFilter.value = '' // Limpiar otros filtros
-}
-
-const setBestsellerFilter = () => {
-  // Limpiar filtros y mostrar solo bestsellers
-  searchTerm.value = ''
-  categoryFilter.value = ''
-  brandFilter.value = ''
-  stockFilter.value = ''
-
-  // Podrías agregar un filtro específico para bestsellers aquí
-  // Por ahora solo limpiamos los filtros
-}
-
 const clearFilters = () => {
   searchTerm.value = ''
   categoryFilter.value = ''
   brandFilter.value = ''
-  stockFilter.value = ''
-  router.get('/parts') // Recargar sin filtros
-}
-
-const getStockStatus = (stock: number, minStock: number): string => {
-  if (stock === 0) return 'Sin Stock'
-  if (stock <= minStock) return 'Stock Bajo'
-  return 'En Stock'
-}
-
-const getStockStatusClass = (stock: number, minStock: number): string => {
-  if (stock === 0) return 'bg-red-100 text-red-800'
-  if (stock <= minStock) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-green-100 text-green-800'
+  router.get('/parts')
 }
 
 const formatPrice = (price: number): string => {

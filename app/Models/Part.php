@@ -17,24 +17,21 @@ class Part extends Model
         'original_code',
         'brand',
         'price',
-        'stock_quantity',
-        'min_stock',
-        'location',
         'image_path',
         'description',
-        'notes',
-        'is_bestseller',
         'is_available',
         'view_count',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'stock_quantity' => 'integer',
-        'min_stock' => 'integer',
-        'is_bestseller' => 'boolean',
         'is_available' => 'boolean',
         'view_count' => 'integer',
+    ];
+
+    protected $attributes = [
+        'is_available' => true, // Siempre disponible por defecto
+        'view_count' => 0,
     ];
 
     // Relaciones
@@ -75,21 +72,6 @@ class Part extends Model
         return $query->where('is_available', true);
     }
 
-    public function scopeBestseller($query)
-    {
-        return $query->where('is_bestseller', true);
-    }
-
-    public function scopeLowStock($query)
-    {
-        return $query->whereColumn('stock_quantity', '<=', 'min_stock');
-    }
-
-    public function scopeInStock($query)
-    {
-        return $query->where('stock_quantity', '>', 0);
-    }
-
     public function scopeByCategory($query, $categoryId)
     {
         return $query->where('category_id', $categoryId);
@@ -100,7 +82,6 @@ class Part extends Model
         return $query->where('model_id', $modelId);
     }
 
-    //Scope para buscar en códigos también
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
@@ -119,26 +100,6 @@ class Part extends Model
     public function getImageUrlAttribute()
     {
         return $this->image_path ? asset('storage/' . $this->image_path) : null;
-    }
-
-    public function getStockStatusAttribute()
-    {
-        if ($this->stock_quantity <= 0) {
-            return 'out_of_stock';
-        } elseif ($this->stock_quantity <= $this->min_stock) {
-            return 'low_stock';
-        }
-        return 'in_stock';
-    }
-
-    public function getStockStatusColorAttribute()
-    {
-        return match($this->stock_status) {
-            'out_of_stock' => 'red',
-            'low_stock' => 'yellow',
-            'in_stock' => 'green',
-            default => 'gray'
-        };
     }
 
     public function getFormattedPriceAttribute()
@@ -179,7 +140,6 @@ class Part extends Model
     //métodos para manejar códigos
     public function addCode(string $code, string $type = 'internal', bool $isPrimary = false)
     {
-        // Si es primary, quitar primary de otros códigos
         if ($isPrimary) {
             $this->codes()->update(['is_primary' => false]);
         }
@@ -195,11 +155,9 @@ class Part extends Model
 
     public function updateCodes(array $codes)
     {
-        // Eliminar códigos existentes que no estén en el array
         $newCodes = collect($codes)->pluck('code')->toArray();
         $this->codes()->whereNotIn('code', $newCodes)->delete();
 
-        // Agregar/actualizar códigos
         foreach ($codes as $index => $codeData) {
             $this->codes()->updateOrCreate(
                 ['code' => $codeData['code']],
@@ -212,7 +170,6 @@ class Part extends Model
             );
         }
 
-        // Asegurar que haya al menos un código primary
         if (!$this->codes()->where('is_primary', true)->exists()) {
             $this->codes()->first()?->update(['is_primary' => true]);
         }

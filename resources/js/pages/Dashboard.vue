@@ -16,11 +16,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ]
 
-// Estados reactivos
+// Estados reactivos simplificados
 const stats = ref({
   totalParts: 0,
-  lowStock: 0,
-  bestsellers: 0,
+  availableParts: 0, // Cambiado de lowStock
   categories: 0
 })
 
@@ -226,8 +225,8 @@ onUnmounted(() => {
 
             <!-- Main Content -->
             <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <!-- Stats Cards Simplificadas -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="stats-card">
                         <StatsCard
                             title="Total Repuestos"
@@ -238,17 +237,9 @@ onUnmounted(() => {
                     </div>
                     <div class="stats-card">
                         <StatsCard
-                            title="Stock Bajo"
-                            :value="stats.lowStock"
-                            icon="⚠️"
-                            color="yellow"
-                        />
-                    </div>
-                    <div class="stats-card">
-                        <StatsCard
-                            title="Más Vendidos"
-                            :value="stats.bestsellers"
-                            icon="⭐"
+                            title="Disponibles"
+                            :value="stats.availableParts"
+                            icon="✅"
                             color="green"
                         />
                     </div>

@@ -99,11 +99,6 @@ class PartController extends Controller
                 'stats' => [
                     'total_parts' => Part::count(),
                     'available_parts' => Part::available()->count(),
-                    'out_of_stock' => Part::where('stock_quantity', '<=', 0)->count(),
-                    'low_stock' => Part::where('stock_quantity', '>', 0)
-                                    ->whereColumn('stock_quantity', '<=', 'min_stock')
-                                    ->count(),
-                    'bestsellers' => Part::where('is_bestseller', true)->count()
                 ]
             ]);
         } catch (\Exception $e) {
@@ -117,9 +112,6 @@ class PartController extends Controller
                 'stats' => [
                     'total_parts' => 0,
                     'available_parts' => 0,
-                    'out_of_stock' => 0,
-                    'low_stock' => 0,
-                    'bestsellers' => 0
                 ],
                 'error' => 'Error al cargar los repuestos'
             ]);
@@ -151,19 +143,11 @@ class PartController extends Controller
                 'models' => $models,
                 'formData' => [
                     'name' => '',
-                    'part_number' => '',
-                    'original_code' => '',
                     'brand' => '',
                     'price' => '',
-                    'stock_quantity' => '',
-                    'min_stock' => 5,
-                    'location' => '',
                     'description' => '',
-                    'notes' => '',
                     'model_id' => '',
                     'category_id' => '',
-                    'is_bestseller' => false,
-                    'is_available' => true,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -180,15 +164,9 @@ class PartController extends Controller
                 'name' => 'required|string|max:255',
                 'brand' => 'required|string|max:255',
                 'price' => 'required|numeric|min:0',
-                'stock_quantity' => 'required|integer|min:0',
-                'min_stock' => 'required|integer|min:0',
-                'location' => 'nullable|string|max:100',
                 'description' => 'nullable|string',
-                'notes' => 'nullable|string',
                 'model_id' => 'required|exists:models,id',
                 'category_id' => 'required|exists:part_categories,id',
-                'is_bestseller' => 'boolean',
-                'is_available' => 'boolean',
                 'image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
                 'codes' => 'required|array|min:1',
                 'codes.*.code' => 'required|string|max:100',
@@ -258,20 +236,15 @@ class PartController extends Controller
                 }
             }
 
-            // Crear el repuesto
+            // Crear el repuesto (siempre disponible por defecto)
             $part = Part::create([
                 'name' => $validated['name'],
                 'brand' => $validated['brand'],
                 'price' => $validated['price'],
-                'stock_quantity' => $validated['stock_quantity'],
-                'min_stock' => $validated['min_stock'],
-                'location' => $validated['location'],
                 'description' => $validated['description'],
-                'notes' => $validated['notes'],
                 'model_id' => $validated['model_id'],
                 'category_id' => $validated['category_id'],
-                'is_bestseller' => $validated['is_bestseller'] ?? false,
-                'is_available' => $validated['is_available'] ?? true,
+                'is_available' => true, // Siempre disponible
                 'image_path' => $imagePath,
                 'part_number' => collect($validated['codes'])->firstWhere('is_primary', true)['code'] ?? $validated['codes'][0]['code'],
             ]);
@@ -310,7 +283,7 @@ class PartController extends Controller
     public function show($id)
     {
         try {
-            $part = Part::with(['model.brand', 'category'])->findOrFail($id);
+            $part = Part::with(['model.brand', 'category', 'codes'])->findOrFail($id);
 
             return Inertia::render('Parts/Show', [
                 'part' => $part
@@ -419,5 +392,4 @@ class PartController extends Controller
             'message' => 'Código disponible'
         ]);
     }
-
 }

@@ -92,50 +92,44 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Categoría con opción de crear -->
                 <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
                     Categoría *
-                </label>
-                <div class="flex space-x-2">
+                  </label>
+                  <div class="flex space-x-2">
                     <select
-                    v-model="form.category_id"
-                    required
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    :class="{ 'border-red-500': errors.category_id }"
+                      v-model="form.category_id"
+                      required
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      :class="{ 'border-red-500': errors.category_id }"
                     >
-                    <option value="">Seleccionar categoría...</option>
-
-                    <!-- Iterar sobre categorías padre y sus hijos -->
-                    <template v-for="category in categories" :key="category.id">
-                        <!-- Categoría padre -->
+                      <option value="">Seleccionar categoría...</option>
+                      <template v-for="category in categories" :key="category.id">
                         <option
-                        :value="category.id"
-                        class="font-semibold"
+                          :value="category.id"
+                          class="font-semibold"
                         >
-                        📁 {{ category.name }}
+                          📁 {{ category.name }}
                         </option>
-
-                        <!-- Subcategorías (children) -->
                         <option
-                        v-for="subcategory in category.children || []"
-                        :key="subcategory.id"
-                        :value="subcategory.id"
-                        class="text-gray-600"
+                          v-for="subcategory in category.children || []"
+                          :key="subcategory.id"
+                          :value="subcategory.id"
+                          class="text-gray-600"
                         >
-                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {{ subcategory.name }}
+                          &nbsp;&nbsp;&nbsp;&nbsp;↳ {{ subcategory.name }}
                         </option>
-                    </template>
-
+                      </template>
                     </select>
                     <button
-                    type="button"
-                    @click="showCreateCategory = true"
-                    class="px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                    title="Crear nueva categoría"
+                      type="button"
+                      @click="showCreateCategory = true"
+                      class="px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                      title="Crear nueva categoría"
                     >
-                    +
+                      +
                     </button>
-                </div>
-                <p v-if="errors.category_id" class="mt-1 text-sm text-red-600">{{ errors.category_id }}</p>
+                  </div>
+                  <p v-if="errors.category_id" class="mt-1 text-sm text-red-600">{{ errors.category_id }}</p>
                 </div>
 
                 <!-- Modelo con opción de crear -->
@@ -171,19 +165,19 @@
               </div>
             </section>
 
-            <!-- Inventario y Precios -->
+            <!-- Precio -->
             <section>
               <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                 <span class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
                   💰
                 </span>
-                Inventario y Precios
+                Precio
               </h3>
 
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Precio *
+                    Precio de Venta *
                   </label>
                   <div class="relative">
                     <span class="absolute left-3 top-2 text-gray-500">$</span>
@@ -200,86 +194,28 @@
                   </div>
                   <p v-if="errors.price" class="mt-1 text-sm text-red-600">{{ errors.price }}</p>
                 </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Actual *
-                  </label>
-                  <input
-                    v-model="form.stock_quantity"
-                    type="number"
-                    min="0"
-                    required
-                    placeholder="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    :class="{ 'border-red-500': errors.stock_quantity }"
-                  />
-                  <p v-if="errors.stock_quantity" class="mt-1 text-sm text-red-600">{{ errors.stock_quantity }}</p>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Mínimo *
-                  </label>
-                  <input
-                    v-model="form.min_stock"
-                    type="number"
-                    min="0"
-                    required
-                    placeholder="5"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    :class="{ 'border-red-500': errors.min_stock }"
-                  />
-                  <p v-if="errors.min_stock" class="mt-1 text-sm text-red-600">{{ errors.min_stock }}</p>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Ubicación
-                  </label>
-                  <input
-                    v-model="form.location"
-                    type="text"
-                    placeholder="Ej: A-1-3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
               </div>
             </section>
 
-            <!-- Descripción y Notas -->
+            <!-- Descripción -->
             <section>
               <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                 <span class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                   📝
                 </span>
-                Descripción y Notas
+                Descripción
               </h3>
 
-              <div class="grid grid-cols-1 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    v-model="form.description"
-                    rows="3"
-                    placeholder="Descripción detallada del repuesto..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  ></textarea>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Notas Internas
-                  </label>
-                  <textarea
-                    v-model="form.notes"
-                    rows="2"
-                    placeholder="Notas para uso interno..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  ></textarea>
-                </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción del Repuesto
+                </label>
+                <textarea
+                  v-model="form.description"
+                  rows="4"
+                  placeholder="Descripción detallada del repuesto, características técnicas, compatibilidad..."
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                ></textarea>
               </div>
             </section>
 
@@ -354,41 +290,6 @@
               </div>
             </section>
 
-            <!-- Opciones -->
-            <section>
-              <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                <span class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                  ⚙️
-                </span>
-                Opciones
-              </h3>
-
-              <div class="space-y-4">
-                <label class="flex items-center">
-                  <input
-                    v-model="form.is_bestseller"
-                    type="checkbox"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">
-                    Marcar como bestseller ⭐
-                  </span>
-                </label>
-
-                <label class="flex items-center">
-                  <input
-                    v-model="form.is_available"
-                    type="checkbox"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    checked
-                  />
-                  <span class="ml-2 text-sm text-gray-700">
-                    Disponible para venta ✅
-                  </span>
-                </label>
-              </div>
-            </section>
-
             <!-- Botones -->
             <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
@@ -445,14 +346,15 @@ const props = defineProps({
   models: Array,
   formData: Object
 })
-console.log('📋 Categorías que llegan al frontend:', props.categories)
-console.log('🔍 MOTOR category:', props.categories.find(c => c.name === 'MOTOR'))
-console.log('👶 Children de MOTOR:', props.categories.find(c => c.name === 'MOTOR')?.children)
-console.log('📊 Estructura completa:', JSON.stringify(props.categories, null, 2))
 
-// Form reactivo con códigos e imagen
+// Form reactivo simplificado
 const form = useForm({
-  ...props.formData,
+  name: '',
+  brand: '',
+  price: '',
+  description: '',
+  model_id: '',
+  category_id: '',
   codes: [
     {
       code: '',
@@ -461,7 +363,7 @@ const form = useForm({
       is_active: true
     }
   ],
-  image: null // Campo para la imagen
+  image: null
 })
 
 const errors = ref({})
@@ -555,29 +457,24 @@ const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // Validar tipo de archivo
   if (!file.type.startsWith('image/')) {
     errors.value.image = 'Por favor selecciona un archivo de imagen válido'
     return
   }
 
-  // Validar tamaño (5MB máximo)
   if (file.size > 5 * 1024 * 1024) {
     errors.value.image = 'La imagen no puede ser mayor a 5MB'
     return
   }
 
-  // Limpiar errores previos
   delete errors.value.image
 
-  // Crear preview
   const reader = new FileReader()
   reader.onload = (e) => {
     imagePreview.value = e.target.result
   }
   reader.readAsDataURL(file)
 
-  // Guardar archivo en el form
   form.image = file
 }
 
@@ -586,7 +483,6 @@ const removeImage = () => {
   form.image = null
   delete errors.value.image
 
-  // Limpiar el input file
   const input = document.getElementById('image-upload')
   if (input) input.value = ''
 }

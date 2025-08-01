@@ -23,8 +23,7 @@ class DashboardService
     {
         return [
             'totalParts' => Part::count(),
-            'lowStock' => Part::lowStock()->count(),
-            'bestsellers' => Part::where('is_bestseller', true)->count(),
+            'availableParts' => Part::available()->count(),
             'categories' => PartCategory::whereNull('parent_id')->count(),
         ];
     }
@@ -32,7 +31,9 @@ class DashboardService
     private function getMainCategories()
     {
         return PartCategory::whereNull('parent_id')
-            ->withCount('parts')
+            ->withCount(['parts' => function ($query) {
+                $query->available();
+            }])
             ->orderBy('sort_order')
             ->take(4)
             ->get();
@@ -51,7 +52,9 @@ class DashboardService
 
     private function getRecentParts()
     {
-        return Part::with(['model.brand', 'category'])
+        return Part::with(['model.brand', 'category', 'codes' => function($query) {
+                $query->where('is_primary', true);
+            }])
             ->available()
             ->orderBy('created_at', 'desc')
             ->take(8)
