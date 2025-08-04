@@ -129,6 +129,10 @@ const props = defineProps({
   errors: {
     type: Object,
     default: () => ({})
+  },
+  partId: {
+    type: [Number, String],
+    default: null
   }
 })
 
@@ -176,15 +180,22 @@ const validateCode = async (index) => {
   try {
     validatingCodes.value[index] = true
 
+    const requestBody = {
+      code: code
+    }
+
+    // exclude_part_id si estamos editando
+    if (props.partId) {
+      requestBody.exclude_part_id = props.partId
+    }
+
     const response = await fetch('/api/validate-part-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
       },
-      body: JSON.stringify({
-        code: code
-      })
+      body: JSON.stringify(requestBody)
     })
 
     const result = await response.json()

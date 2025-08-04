@@ -392,4 +392,153 @@ class PartController extends Controller
             'message' => 'Código disponible'
         ]);
     }
+
+    public function edit($id)
+    {
+        try {
+            $part = Part::with(['model.brand', 'category', 'codes' => function($query) {
+                $query->orderBy('sort_order')->orderBy('is_primary', 'desc');
+            }])->findOrFail($id);
+
+            $categories = PartCategory::active()
+                ->with('children')
+                ->whereNull('parent_id')
+                ->orderBy('name')
+                ->get();
+
+            $brands = Brand::active()
+                ->orderBy('name')
+                ->get();
+
+            $models = VehicleModel::with('brand')
+                ->active()
+                ->orderBy('name')
+                ->get();
+
+            return Inertia::render('Parts/Edit', [
+                'part' => $part,
+                'categories' => $categories,
+                'brands' => $brands,
+                'models' => $models,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Part edit error: ' . $e->getMessage());
+            return redirect()->route('parts.index')
+                ->with('error', 'Repuesto no encontrado');
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $part = Part::findOrFail($id);
+
+            // Debug: Verificar que llegan los datos
+            \Log::info('Update request received:', [
+                'name' => $request->input('name'),
+                'brand' => $request->input('brand'),
+                'price' => $request->input('price'),
+                'has_image' => $request->hasFile('image'),
+                'codes_count' => count($request->input('codes', []))
+            ]);
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'brand' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'description' => 'nullable|string',
+                'model_id' => 'required|exists:models,id',
+                'category_id' => 'required|exists:part_categories,id',
+                'image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+                'remove_image' => 'sometimes|boolean',
+                'codes' => 'required|array|min:1',
+                'codes.*.code' => 'required|string|max:100',
+                'codes.*.type' => 'required|in:internal,oem,aftermarket,universal',
+                'codes.*.is_primary' => 'sometimes|boolean',
+                'codes.*.is_active' => 'sometimes|boolean',
+            ]);
+
+            \DB::commit();
+
+            // 🔥 RESPONDER SEGÚN EL TIPO DE REQUEST
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Repuesto '{$part->name}' actualizado exitosamente",
+                    'redirect' => route('parts.show', $part)
+                ]);
+            }
+
+            return redirect()
+                ->route('parts.show', $part)
+                ->with('success', "Repuesto '{$part->name}' actualizado exitosamente");
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \DB::rollBack();
+
+            // Responder con errores JSON si es AJAX
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+
+            return back()
+                ->withInput()
+                ->withErrors($e->errors());
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Parts update error: ' . $e->getMessage());
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['general' => 'Error interno del servidor']
+                ], 500);
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', 'Error al actualizar el repuesto: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $part = Part::with('codes')->findOrFail($id);
+
+            \DB::beginTransaction();
+
+            // Eliminar imagen si existe
+            if ($part->image_path && \Storage::disk('public')->exists($part->image_path)) {
+                \Storage::disk('public')->delete($part->image_path);
+            }
+
+            // Eliminar códigos relacionados
+            $part->codes()->delete();
+
+            // Guardar nombre para el mensaje
+            $partName = $part->name;
+
+            // Eliminar el repuesto
+            $part->delete();
+
+            \DB::commit();
+
+            return redirect()
+                ->route('parts.index')
+                ->with('success', "Repuesto '{$partName}' eliminado exitosamente");
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Part destroy error: ' . $e->getMessage());
+
+            return redirect()
+                ->route('parts.index')
+                ->with('error', 'Error al eliminar el repuesto: ' . $e->getMessage());
+        }
+    }
 }
