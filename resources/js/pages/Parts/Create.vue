@@ -477,15 +477,50 @@ const submitForm = async () => {
 
 // Métodos para modales
 const handleCategoryCreated = (newCategory) => {
-  props.categories.push(newCategory)
-  formData.value.category_id = newCategory.id
+  console.log('✅ Nueva categoría creada:', newCategory)
+
+  if (newCategory && newCategory.id) {
+    // Si es subcategoría, agregarla al padre correcto
+    if (newCategory.parent_id) {
+      const parentCategory = props.categories.find(cat => cat.id === newCategory.parent_id)
+      if (parentCategory) {
+        if (!parentCategory.children) {
+          parentCategory.children = []
+        }
+        parentCategory.children.push(newCategory)
+      }
+    } else {
+      // Es categoría principal
+      props.categories.push({
+        ...newCategory,
+        children: []
+      })
+    }
+
+    // Seleccionar automáticamente la nueva categoría
+    formData.value.category_id = newCategory.id
+  }
   showCreateCategory.value = false
 }
 
 const handleModelCreated = (newModel) => {
-  props.models.push(newModel)
-  formData.value.model_id = newModel.id
+  console.log('✅ Nuevo modelo creado:', newModel)
+
+  if (newModel && newModel.id) {
+    props.models.push(newModel)
+
+    formData.value.model_id = newModel.id
+  }
   showCreateModel.value = false
+}
+
+const handleBrandCreated = (newBrand) => {
+  console.log('✅ Nueva marca creada:', newBrand)
+
+  if (newBrand && newBrand.id) {
+    props.brands.push(newBrand)
+  }
+  showCreateBrand.value = false
 }
 
 //MANEJO DE IMÁGENES

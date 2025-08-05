@@ -101,6 +101,8 @@ class VehicleModelController extends Controller
                 'is_active' => true,
             ]);
 
+            $model->load('brand');
+
             return response()->json([
                 'success' => true,
                 'model' => $model->load('brand'),

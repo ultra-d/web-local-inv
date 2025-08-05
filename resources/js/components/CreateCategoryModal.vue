@@ -39,6 +39,7 @@
               placeholder="Ej: Motor, Frenos, Transmisión..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               :class="{ 'border-red-500': errors.name }"
+              ref="nameInput"
             />
             <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
           </div>
@@ -52,8 +53,13 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             >
               <option value="">Categoría principal</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
+              <!-- 🔥 SOLO MOSTRAR CATEGORÍAS PRINCIPALES COMO PADRE -->
+              <option
+                v-for="category in parentCategories"
+                :key="category.id"
+                :value="category.id"
+              >
+                📁 {{ category.name }}
               </option>
             </select>
           </div>
@@ -93,8 +99,14 @@
             </div>
           </div>
 
+          <!-- 🔥 MOSTRAR ERRORES DE VALIDACIÓN -->
           <div v-if="errors.general" class="p-3 bg-red-50 border border-red-200 rounded-md">
             <p class="text-sm text-red-600">{{ errors.general }}</p>
+          </div>
+
+          <!-- 🔥 MOSTRAR ÉXITO TEMPORAL -->
+          <div v-if="showSuccess" class="p-3 bg-green-50 border border-green-200 rounded-md">
+            <p class="text-sm text-green-600">✅ Categoría creada exitosamente</p>
           </div>
 
           <div class="flex justify-end space-x-3 pt-4">
@@ -102,15 +114,22 @@
               type="button"
               @click="$emit('close')"
               class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              :disabled="creating"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              :disabled="creating"
+              :disabled="creating || !form.name.trim()"
               class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
             >
-              <span v-if="creating">Creando...</span>
+              <span v-if="creating">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creando...
+              </span>
               <span v-else>Crear Categoría</span>
             </button>
           </div>
@@ -121,14 +140,18 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 
 const props = defineProps({
-  categories: Array
+  categories: {
+    type: Array,
+    default: () => []
+  }
 })
 
 const emit = defineEmits(['close', 'created'])
 
+// 🔥 FORMULARIO REACTIVO
 const form = reactive({
   name: '',
   parent_id: '',
@@ -138,6 +161,13 @@ const form = reactive({
 
 const errors = ref({})
 const creating = ref(false)
+const showSuccess = ref(false)
+const nameInput = ref(null)
+
+// 🔥 COMPUTED PARA CATEGORÍAS PRINCIPALES (solo las que no tienen padre)
+const parentCategories = computed(() => {
+  return props.categories.filter(category => !category.parent_id)
+})
 
 const iconOptions = [
   { value: '🔧', label: 'Motor', emoji: '🔧' },
@@ -157,11 +187,15 @@ const iconOptions = [
   { value: '🛡️', label: 'Seguridad', emoji: '🛡️' }
 ]
 
+// 🔥 FUNCIÓN PARA CREAR CATEGORÍA (AJAX)
 const createCategory = async () => {
   try {
     creating.value = true
     errors.value = {}
 
+    console.log('📦 Enviando datos:', form)
+
+    // 🔥 PETICIÓN AJAX QUE NO AFECTA EL FORMULARIO PRINCIPAL
     const response = await fetch('/categories/store-ajax', {
       method: 'POST',
       headers: {
@@ -169,7 +203,12 @@ const createCategory = async () => {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(form)
+      body: JSON.stringify({
+        name: form.name.trim(),
+        parent_id: form.parent_id || null,
+        color: form.color,
+        icon: form.icon
+      })
     })
 
     const data = await response.json()
@@ -184,15 +223,55 @@ const createCategory = async () => {
       return
     }
 
-    // Emitir el evento con la nueva categoría
-    console.log('✅ Emitiendo categoría creada:', data.category || data)
-    emit('created', data.category || data)
+    // 🎉 ÉXITO: Mostrar mensaje y emitir evento
+    showSuccess.value = true
+
+    // 🔥 EMITIR LA NUEVA CATEGORÍA AL COMPONENTE PADRE
+    const newCategory = data.category || data
+    console.log('✅ Emitiendo categoría creada:', newCategory)
+    emit('created', newCategory)
+
+    // 🔄 RESETEAR FORMULARIO
+    form.name = ''
+    form.parent_id = ''
+    form.color = '#3B82F6'
+    form.icon = '📦'
+
+    // ⏰ CERRAR MODAL DESPUÉS DE 1.5 SEGUNDOS
+    setTimeout(() => {
+      emit('close')
+    }, 1500)
 
   } catch (error) {
-    console.error('Error creating category:', error)
+    console.error('❌ Error creating category:', error)
     errors.value = { general: 'Error de conexión. Inténtalo de nuevo.' }
   } finally {
     creating.value = false
   }
 }
+
+// 🎯 ENFOCAR INPUT AL MONTAR
+onMounted(() => {
+  nextTick(() => {
+    if (nameInput.value) {
+      nameInput.value.focus()
+    }
+  })
+})
 </script>
+
+<style scoped>
+/* Animación para el spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+</style>

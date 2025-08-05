@@ -80,6 +80,8 @@ class PartCategoryController extends Controller
                 'sort_order' => PartCategory::max('sort_order') + 1,
             ]);
 
+            $category->load('parent');
+
             return response()->json([
                 'success' => true,
                 'category' => $category->load('parent'),
