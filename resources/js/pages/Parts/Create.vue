@@ -37,7 +37,7 @@
                     Nombre del Repuesto *
                   </label>
                   <input
-                    v-model="form.name"
+                    v-model="formData.name"
                     type="text"
                     required
                     placeholder="Ej: Filtro de aceite motor 2.5L"
@@ -52,7 +52,7 @@
                     Marca *
                   </label>
                   <input
-                    v-model="form.brand"
+                    v-model="formData.brand"
                     type="text"
                     required
                     placeholder="Ej: Bosch, Denso, NGK, Gates"
@@ -75,7 +75,7 @@
 
               <PartCodesInput
                 ref="partCodesRef"
-                v-model="form.codes"
+                v-model="formData.codes"
                 :errors="errors"
               />
             </section>
@@ -97,7 +97,7 @@
                   </label>
                   <div class="flex space-x-2">
                     <select
-                      v-model="form.category_id"
+                      v-model="formData.category_id"
                       required
                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       :class="{ 'border-red-500': errors.category_id }"
@@ -139,7 +139,7 @@
                   </label>
                   <div class="flex space-x-2">
                     <select
-                      v-model="form.model_id"
+                      v-model="formData.model_id"
                       required
                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       :class="{ 'border-red-500': errors.model_id }"
@@ -182,7 +182,7 @@
                   <div class="relative">
                     <span class="absolute left-3 top-2 text-gray-500">$</span>
                     <input
-                      v-model="form.price"
+                      v-model="formData.price"
                       type="number"
                       step="0.01"
                       min="0"
@@ -211,7 +211,7 @@
                   Descripción del Repuesto
                 </label>
                 <textarea
-                  v-model="form.description"
+                  v-model="formData.description"
                   rows="4"
                   placeholder="Descripción detallada del repuesto, características técnicas, compatibilidad..."
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -333,7 +333,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import PartCodesInput from '@/components/PartCodesInput.vue'
 import CreateCategoryModal from '@/components/CreateCategoryModal.vue'
@@ -347,8 +347,8 @@ const props = defineProps({
   formData: Object
 })
 
-// Form reactivo simplificado
-const form = useForm({
+//FormData manual
+const formData = ref({
   name: '',
   brand: '',
   price: '',
@@ -362,13 +362,13 @@ const form = useForm({
       is_primary: true,
       is_active: true
     }
-  ],
-  image: null
+  ]
 })
 
 const errors = ref({})
 const submitting = ref(false)
 const imagePreview = ref(null)
+const imageFile = ref(null) // ← Nueva variable separada para la imagen
 const partCodesRef = ref(null)
 
 // Estados de modales
@@ -393,14 +393,14 @@ const groupedModels = computed(() => {
   return Object.values(grouped)
 })
 
-// Métodos
+// 🚀 MÉTODO CORREGIDO PARA ENVÍO DE FORMULARIO
 const submitForm = async () => {
   try {
     submitting.value = true
     errors.value = {}
 
     // Validar códigos antes de enviar
-    if (!form.codes.length || !form.codes.some(code => code.code.trim())) {
+    if (!formData.value.codes.length || !formData.value.codes.some(code => code.code.trim())) {
       errors.value.codes = 'Debe agregar al menos un código'
       submitting.value = false
       return
@@ -417,45 +417,87 @@ const submitForm = async () => {
     }
 
     // Limpiar códigos vacíos y asegurar que haya un primary
-    const validCodes = form.codes.filter(code => code.code.trim())
+    const validCodes = formData.value.codes.filter(code => code.code.trim())
     if (!validCodes.some(code => code.is_primary)) {
       validCodes[0].is_primary = true
     }
-    form.codes = validCodes
+    formData.value.codes = validCodes
 
-    form.post('/parts', {
-      onSuccess: () => {
+    // 🔧 CREAR FormData manualmente para incluir archivos
+    const submitData = new FormData()
+
+    // Agregar campos del formulario
+    submitData.append('name', formData.value.name)
+    submitData.append('brand', formData.value.brand)
+    submitData.append('price', formData.value.price)
+    submitData.append('description', formData.value.description || '')
+    submitData.append('model_id', formData.value.model_id)
+    submitData.append('category_id', formData.value.category_id)
+
+    // Agregar códigos
+    formData.value.codes.forEach((code, index) => {
+      submitData.append(`codes[${index}][code]`, code.code)
+      submitData.append(`codes[${index}][type]`, code.type)
+      submitData.append(`codes[${index}][is_primary]`, code.is_primary ? '1' : '0')
+      submitData.append(`codes[${index}][is_active]`, code.is_active ? '1' : '0')
+    })
+
+    // 🔥 AGREGAR IMAGEN SI EXISTE
+    if (imageFile.value) {
+      submitData.append('image', imageFile.value)
+    }
+
+    // Debug: Verificar FormData
+    console.log('📤 Enviando FormData:')
+    for (let [key, value] of submitData.entries()) {
+      console.log(`${key}:`, value)
+    }
+
+    // 🚀 ENVIAR CON ROUTER.POST en lugar de useForm
+    router.post('/parts', submitData, {
+      preserveScroll: true,
+      onSuccess: (page) => {
+        console.log('✅ Repuesto creado exitosamente')
         // Redirigir se maneja en el controlador
       },
       onError: (formErrors) => {
+        console.error('❌ Errores de validación:', formErrors)
         errors.value = formErrors
       },
       onFinish: () => {
         submitting.value = false
       }
     })
+
   } catch (error) {
-    console.error('Error submitting form:', error)
+    console.error('❌ Error submitting form:', error)
     submitting.value = false
   }
 }
 
+// Métodos para modales
 const handleCategoryCreated = (newCategory) => {
   props.categories.push(newCategory)
-  form.category_id = newCategory.id
+  formData.value.category_id = newCategory.id
   showCreateCategory.value = false
 }
 
 const handleModelCreated = (newModel) => {
   props.models.push(newModel)
-  form.model_id = newModel.id
+  formData.value.model_id = newModel.id
   showCreateModel.value = false
 }
 
-// Métodos para manejo de imágenes
+//MANEJO DE IMÁGENES
 const handleImageUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
+
+  console.log('📸 Archivo seleccionado:', {
+    name: file.name,
+    size: file.size,
+    type: file.type
+  })
 
   if (!file.type.startsWith('image/')) {
     errors.value.image = 'Por favor selecciona un archivo de imagen válido'
@@ -469,18 +511,21 @@ const handleImageUpload = (event) => {
 
   delete errors.value.image
 
+  // 🔥 GUARDAR ARCHIVO E IMAGEN PREVIEW POR SEPARADO
+  imageFile.value = file // ← Para el formulario
+
   const reader = new FileReader()
   reader.onload = (e) => {
-    imagePreview.value = e.target.result
+    imagePreview.value = e.target.result // ← Para mostrar preview
   }
   reader.readAsDataURL(file)
 
-  form.image = file
+  console.log('✅ Imagen cargada correctamente')
 }
 
 const removeImage = () => {
   imagePreview.value = null
-  form.image = null
+  imageFile.value = null
   delete errors.value.image
 
   const input = document.getElementById('image-upload')

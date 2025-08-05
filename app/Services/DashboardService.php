@@ -9,13 +9,50 @@ use App\Models\VehicleModel;
 
 class DashboardService
 {
-    public function getDashboardData(): array
+    public function getDashboardData():array
     {
+        // Stats simplificadas
+        $stats = [
+            'totalParts' => Part::count(),
+            'availableParts' => Part::available()->count(),
+            'categories' => PartCategory::active()->count(),
+        ];
+
+        // Categorías principales
+        $categories = PartCategory::active()
+            ->whereNull('parent_id')
+            ->withCount(['parts' => function ($query) {
+                $query->available();
+            }])
+            ->orderBy('parts_count', 'desc')
+            ->take(6)
+            ->get();
+
+        // Marcas populares
+        $brands = Brand::active()
+            ->withCount('models')
+            ->orderBy('models_count', 'desc')
+            ->take(6)
+            ->get();
+
+        // 🔥 REPUESTOS RECIENTES CON IMÁGENES
+        $recentParts = Part::with(['category', 'codes'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($part) {
+                // Agregar URL de imagen
+                if ($part->image_path) {
+                    $part->image_url = asset('storage/' . $part->image_path);
+                }
+                return $part;
+            });
+
         return [
-            'stats' => $this->getStats(),
-            'categories' => $this->getMainCategories(),
-            'brands' => $this->getPopularBrands(),
-            'recentParts' => $this->getRecentParts(),
+            'stats' => $stats,
+            'categories' => $categories,
+            'brands' => $brands,
+            'recentParts' => $recentParts,
         ];
     }
 

@@ -128,7 +128,7 @@
           <p class="mt-4 text-gray-600">Cargando repuestos...</p>
         </div>
 
-        <!-- Parts Table -->
+        <!-- Parts Table/Grid -->
         <div v-else-if="parts.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 class="text-lg font-medium text-gray-900">
@@ -152,7 +152,7 @@
             </div>
           </div>
 
-          <!-- Table View Simplificada -->
+          <!-- 🔥 TABLE VIEW CON MINIATURAS -->
           <div v-if="viewMode === 'table'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -176,96 +176,138 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="part in filteredParts" :key="part.id" class="hover:bg-gray-50">
+                  <!-- 🔥 COLUMNA CON IMAGEN + NOMBRE -->
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-12 w-12">
+                    <div class="flex items-center space-x-4">
+                      <!-- Miniatura de imagen -->
+                      <div class="flex-shrink-0 w-12 h-12 relative">
                         <img
-                          v-if="part.image_url"
-                          :src="part.image_url"
+                          v-if="part.image_path"
+                          :src="getImageUrl(part.image_path)"
                           :alt="part.name"
-                          class="h-12 w-12 rounded-lg object-cover"
-                        >
+                          class="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                          @error="handleImageError"
+                        />
+                        <!-- Placeholder si no hay imagen -->
                         <div
                           v-else
-                          class="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center"
+                          class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200"
                         >
-                          <span class="text-gray-500 text-xs">🔧</span>
+                          <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
                         </div>
                       </div>
-                      <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">{{ part.name }}</div>
-                        <div class="text-sm text-gray-500">{{ part.brand }}</div>
+
+                      <!-- Información del repuesto -->
+                      <div>
+                        <div class="text-sm font-medium text-gray-900">
+                          {{ part.name }}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                          {{ part.brand }}
+                        </div>
                       </div>
                     </div>
                   </td>
+
+                  <!-- Código Principal -->
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ part.part_number }}</div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span v-if="part.category" class="text-sm text-gray-900">
-                      {{ part.category.name }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {{ getPrimaryCode(part) }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="text-sm font-bold text-green-600">
-                      ${{ formatPrice(part.price) }}
-                    </span>
+
+                  <!-- Categoría -->
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ part.category?.name || 'Sin categoría' }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex space-x-2">
-                      <Link
-                        :href="route('parts.show', part.id)"
-                        class="text-blue-600 hover:text-blue-900"
-                      >
-                        Ver
-                      </Link>
-                      <button class="text-gray-600 hover:text-gray-900">Editar</button>
-                    </div>
+
+                  <!-- Precio -->
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                    ${{ formatPrice(part.price) }}
+                  </td>
+
+                  <!-- Acciones -->
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <Link
+                      :href="route('parts.show', part.id)"
+                      class="text-blue-600 hover:text-blue-900"
+                    >
+                      Ver
+                    </Link>
+                    <Link
+                      :href="route('parts.edit', part.id)"
+                      class="text-indigo-600 hover:text-indigo-900"
+                    >
+                      Editar
+                    </Link>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Grid View Simplificada -->
+          <!-- 🔥 GRID VIEW CON IMÁGENES GRANDES -->
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
             <div
               v-for="part in filteredParts"
               :key="part.id"
-              class="border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+              class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
             >
-              <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-lg bg-gray-200">
+              <!-- 🔥 IMAGEN EN LA CARD -->
+              <div class="aspect-video relative bg-gray-100">
                 <img
-                  v-if="part.image_url"
-                  :src="part.image_url"
+                  v-if="part.image_path"
+                  :src="getImageUrl(part.image_path)"
                   :alt="part.name"
-                  class="h-48 w-full object-cover object-center"
+                  class="w-full h-full object-cover"
+                  @error="handleImageError"
+                />
+                <!-- Placeholder si no hay imagen -->
+                <div
+                  v-else
+                  class="w-full h-full flex items-center justify-center text-gray-400"
                 >
-                <div v-else class="h-48 w-full flex items-center justify-center bg-gray-100">
-                  <span class="text-4xl text-gray-400">🔧</span>
+                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+
+                <!-- Badge de precio en la esquina -->
+                <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded-md text-sm font-medium">
+                  ${{ formatPrice(part.price) }}
                 </div>
               </div>
 
+              <!-- Contenido de la card -->
               <div class="p-4">
-                <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{{ part.name }}</h3>
-                <p class="text-sm text-gray-500 mb-2">{{ part.brand }}</p>
-                <p class="text-xs text-gray-400 mb-2">{{ part.part_number }}</p>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{{ part.name }}</h3>
+                <p class="text-sm text-gray-600 mb-2">{{ part.brand }}</p>
 
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-lg font-bold text-green-600">
-                    ${{ formatPrice(part.price) }}
+                <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                  <span>{{ part.category?.name || 'Sin categoría' }}</span>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ getPrimaryCode(part) }}
                   </span>
                 </div>
 
-                <div class="flex justify-between items-center">
-                  <span class="text-xs font-medium text-green-600">
-                    Disponible
-                  </span>
+                <!-- Botones de acción -->
+                <div class="flex space-x-2">
                   <Link
                     :href="route('parts.show', part.id)"
-                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
-                    Ver →
+                    Ver detalles
+                  </Link>
+                  <Link
+                    :href="route('parts.edit', part.id)"
+                    class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    title="Editar"
+                  >
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
                   </Link>
                 </div>
               </div>
@@ -302,6 +344,7 @@ interface Part {
   brand: string
   price: number
   is_available: boolean
+  image_path?: string
   image_url?: string
   category?: {
     id: number
@@ -314,6 +357,13 @@ interface Part {
       name: string
     }
   }
+  codes?: Array<{
+    id: number
+    code: string
+    type: string
+    is_primary: boolean
+    is_active: boolean
+  }>
 }
 
 interface Category {
@@ -359,6 +409,28 @@ const brandFilter = ref('')
 // Computed
 const parts = computed(() => props.parts.data || [])
 const stats = computed(() => props.stats)
+
+// 🔥 FUNCIONES PARA MANEJO DE IMÁGENES
+const getImageUrl = (imagePath: string | undefined): string => {
+  if (!imagePath) return ''
+  const cleanPath = imagePath.startsWith('parts/') ? imagePath : `parts/${imagePath}`
+  return `${window.location.origin}/storage/${cleanPath}`
+}
+
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  console.error('Image failed to load:', target.src)
+  // Ocultar imagen rota
+  target.style.display = 'none'
+}
+
+const getPrimaryCode = (part: Part) => {
+  if (part.codes && part.codes.length > 0) {
+    const primaryCode = part.codes.find(code => code.is_primary)
+    return primaryCode ? primaryCode.code : part.codes[0].code
+  }
+  return part.part_number || 'Sin código'
+}
 
 // Helper para obtener el input
 const getSearchInput = (): HTMLInputElement | null => {

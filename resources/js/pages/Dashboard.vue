@@ -2,12 +2,33 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { type BreadcrumbItem } from '@/types'
-import { Head, router } from '@inertiajs/vue3'
+import { Head, router, Link } from '@inertiajs/vue3'
 import SearchBar from '@/components/SearchBar.vue'
 import StatsCard from '@/components/StatsCard.vue'
 import CategoryGrid from '@/components/CategoryGrid.vue'
 import BrandGrid from '@/components/BrandGrid.vue'
 import PartsList from '@/components/PartsList.vue'
+
+// Interfaces
+interface Part {
+  id: number
+  name: string
+  part_number: string
+  brand: string
+  price: number
+  image_path?: string
+  category?: {
+    id: number
+    name: string
+  }
+  codes?: Array<{
+    id: number
+    code: string
+    type: string
+    is_primary: boolean
+    is_active: boolean
+  }>
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -19,17 +40,45 @@ const breadcrumbs: BreadcrumbItem[] = [
 // Estados reactivos simplificados
 const stats = ref({
   totalParts: 0,
-  availableParts: 0, // Cambiado de lowStock
+  availableParts: 0,
   categories: 0
 })
 
 const mainCategories = ref([])
 const popularBrands = ref([])
-const recentParts = ref([])
+const recentParts = ref<Part[]>([])
 
 // Estado del dropdown "Crear Nuevo"
 const showCreateDropdown = ref(false)
 const createDropdown = ref<HTMLElement | null>(null)
+
+// 🔥 FUNCIONES PARA MANEJO DE IMÁGENES
+const getImageUrl = (imagePath: string | undefined): string => {
+  if (!imagePath) return ''
+  const cleanPath = imagePath.startsWith('parts/') ? imagePath : `parts/${imagePath}`
+  return `${window.location.origin}/storage/${cleanPath}`
+}
+
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  console.error('Dashboard image failed to load:', target.src)
+  target.style.display = 'none'
+}
+
+const getPrimaryCode = (part: Part) => {
+  if (part.codes && part.codes.length > 0) {
+    const primaryCode = part.codes.find(code => code.is_primary)
+    return primaryCode ? primaryCode.code : part.codes[0].code
+  }
+  return part.part_number || 'N/A'
+}
+
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price)
+}
 
 // Métodos
 const loadDashboardData = async () => {
@@ -281,7 +330,7 @@ onUnmounted(() => {
                     <BrandGrid :brands="popularBrands" @brand-click="handleBrandClick" />
                 </section>
 
-                <!-- Recent Parts -->
+                <!-- 🔥 REPUESTOS RECIENTES -->
                 <section>
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-900">Repuestos Recientes</h2>
@@ -292,7 +341,115 @@ onUnmounted(() => {
                             Ver todos →
                         </button>
                     </div>
-                    <PartsList :parts="recentParts" />
+
+                    <!-- Grid de cards como antes pero CON IMÁGENES -->
+                    <div v-if="recentParts && recentParts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div
+                            v-for="part in recentParts"
+                            :key="part.id"
+                            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                        >
+                            <!-- 🔥 IMAGEN EN LA PARTE SUPERIOR -->
+                            <div class="aspect-video relative bg-gray-100">
+                                <img
+                                    v-if="part.image_path"
+                                    :src="getImageUrl(part.image_path)"
+                                    :alt="part.name"
+                                    class="w-full h-full object-cover"
+                                    @error="handleImageError"
+                                />
+                                <!-- Placeholder si no hay imagen -->
+                                <div
+                                    v-else
+                                    class="w-full h-full flex items-center justify-center text-gray-400"
+                                >
+                                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+
+                                <!-- Badge de precio en la esquina superior derecha -->
+                                <div class="absolute top-3 right-3 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                    ${{ formatPrice(part.price) }}
+                                </div>
+                            </div>
+
+                            <!-- Contenido de la card -->
+                            <div class="p-4">
+                                <!-- Título del repuesto -->
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                                    {{ part.name }}
+                                </h3>
+
+                                <!-- Marca -->
+                                <p class="text-sm text-gray-600 mb-3">
+                                    {{ part.brand }}
+                                </p>
+
+                                <!-- Información adicional -->
+                                <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ getPrimaryCode(part) }}
+                                        </span>
+                                    </div>
+                                    <span class="text-xs">
+                                        {{ part.category?.name || 'Sin categoría' }}
+                                    </span>
+                                </div>
+
+                                <!-- Información del estado -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                        Disponible
+                                    </span>
+                                </div>
+
+                                <!-- Botones de acción -->
+                                <div class="flex space-x-2">
+                                    <Link
+                                        :href="route('parts.show', part.id)"
+                                        class="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-200 transition-colors text-sm font-medium flex items-center justify-center space-x-1"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        <span>Ver</span>
+                                    </Link>
+                                    <Link
+                                        :href="route('parts.edit', part.id)"
+                                        class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center space-x-1"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span>Editar</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Si no hay repuestos -->
+                    <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-900 mb-1">No hay repuestos</h3>
+                        <p class="text-sm text-gray-500 mb-4">Comienza agregando tu primer repuesto al inventario</p>
+                        <Link
+                            :href="route('parts.create')"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Crear Repuesto
+                        </Link>
+                    </div>
                 </section>
             </main>
         </div>
