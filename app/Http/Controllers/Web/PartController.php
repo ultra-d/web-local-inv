@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePartRequest;
+use App\Http\Requests\UpdatePartRequest;
 use App\Models\Part;
 use App\Models\PartCategory;
 use App\Models\VehicleModel;
@@ -430,7 +431,7 @@ class PartController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePartRequest $request, $id)
     {
         try {
             $part = Part::findOrFail($id);

@@ -174,4 +174,15 @@ class Part extends Model
             $this->codes()->first()?->update(['is_primary' => true]);
         }
     }
+
+    public function deleteStoredImageIfExists(): void
+    {
+        if ($this->image_path) {
+            try {
+                \Storage::disk('public')->delete($this->image_path);
+            } catch (\Throwable $e) {
+                \Log::warning('No se pudo borrar la imagen: '.$this->image_path.' -> '.$e->getMessage());
+            }
+        }
+    }
 }
