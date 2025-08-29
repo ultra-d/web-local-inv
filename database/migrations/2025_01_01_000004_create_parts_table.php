@@ -36,7 +36,7 @@ return new class extends Migration
             $table->index('name');
             $table->index('part_number');
             $table->index('original_code');
-            $table->index('description');
+            $table->fullText('description');
         });
     }
 
